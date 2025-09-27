@@ -67,6 +67,10 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
     compute_moments(pc, fc, sorter);
     cudaDeviceSynchronize();
 
+    // compute Electric field
+    solve_poisson_periodic(fc);
+    cudaDeviceSynchronize();
+
     // write out initial fields
     post_proc(fc, 0);
     cudaDeviceSynchronize();
