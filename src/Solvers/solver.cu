@@ -232,14 +232,14 @@ __global__ void compute_electric_field_kernel_periodic(const real_t *phi, real_t
     }
 }
 
-__global__ void compute_rhs_kernel(const real_t* d_N, real_t* d_rhs, int NX, int NY, real_t dx, real_t dy) {
+__global__ void compute_rhs_kernel(const real_t* d_N, real_t* d_rhs, int NX, int NY, real_t dx, real_t dy, real_t qp) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (i >= NX || j >= NY) return;
 
     int idx = j * NX + i;
-    d_rhs[idx] = d_N[idx] / (dx * dy);
+    d_rhs[idx] = - qp * d_N[idx] / (dx * dy);
 
     // Debug example:
     // real_t x = i*dx;
@@ -279,7 +279,7 @@ void solve_poisson_periodic(FieldContainer& fc) {
     // --------------------------
     // 1. Monte Carlo estimate
     // --------------------------
-    compute_rhs_kernel<<<gridDim, blockDim>>>(fc.d_N, d_rhs, N_GRID_X, N_GRID_Y, dx, dy);
+    compute_rhs_kernel<<<gridDim, blockDim>>>(fc.d_N, d_rhs, N_GRID_X, N_GRID_Y, dx, dy, QP);
     
     //for testing
     //real_t a=0.5, b=4, c=1.0;
@@ -304,7 +304,7 @@ void solve_poisson_periodic(FieldContainer& fc) {
     // --------------------------
     // 2. Variance-Reduced estimate
     // --------------------------
-    compute_rhs_kernel<<<gridDim, blockDim>>>(fc.d_NVR, d_rhs, N_GRID_X, N_GRID_Y, dx, dy);
+    compute_rhs_kernel<<<gridDim, blockDim>>>(fc.d_NVR, d_rhs, N_GRID_X, N_GRID_Y, dx, dy, QP);
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
 

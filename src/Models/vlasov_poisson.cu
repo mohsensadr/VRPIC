@@ -23,6 +23,8 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
     dx = Lx/N_GRID_X;
     dy = Ly/N_GRID_Y;
     grid_size = N_GRID_X*N_GRID_Y;
+    QP = -1.0/N_PARTICLES;
+    MP = 1.0;
 
     ParticleContainer pc(N_PARTICLES);
     FieldContainer fc(N_GRID_X, N_GRID_Y, Lx, Ly);
@@ -96,9 +98,9 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
         // Push particles in the velocity space
         // Use either MC or VR density estimtes in the rhs of the Poisson to get E
         if (rhsMode == RhsMode::VR)
-          pc.update_velocity(fc.d_ExVR, fc.d_EyVR, N_GRID_X, N_GRID_Y, Lx, Ly, DT, Q_OVER_M);
+          pc.update_velocity(fc.d_ExVR, fc.d_EyVR, N_GRID_X, N_GRID_Y, Lx, Ly, DT);
         else
-          pc.update_velocity(fc.d_Ex, fc.d_Ey, N_GRID_X, N_GRID_Y, Lx, Ly, DT, Q_OVER_M);
+          pc.update_velocity(fc.d_Ex, fc.d_Ey, N_GRID_X, N_GRID_Y, Lx, Ly, DT);
         cudaDeviceSynchronize();
 
         // map weights from local to global eq.

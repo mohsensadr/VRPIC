@@ -13,6 +13,8 @@ public:
     float_type *d_vy_old = nullptr;
     float_type *d_w = nullptr;
     float_type *d_wold = nullptr;
+    float_type qp;
+    float_type mp;
     int n_particles;
 
     ParticleContainer(int n_particles_);
@@ -21,7 +23,7 @@ public:
     void update_velocity(float_type *Ex, float_type *Ey,
                          int N_GRID_X, int N_GRID_Y,
                          float_type Lx, float_type Ly,
-                         float_type DT, float_type Q_OVER_M);
+                         float_type DT);
 
     void update_position(float_type Lx, float_type Ly, float_type DT);
 

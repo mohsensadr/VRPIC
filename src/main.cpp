@@ -13,7 +13,7 @@
 #include "Models/vlasov_poisson.cuh"
 // Using simple CUDA-compatible PDF approach
 
-// ./main N_GRID_X N_GRID_Y N_PARTICLES DT NSteps Lx Ly threadsPerBlock deposition_mode VRMode RhsMode [pdf_type] [pdf_params...]
+// ./main N_GRID_X N_GRID_Y N_PARTICLES CFL NSteps Lx Ly threadsPerBlock deposition_mode VRMode RhsMode [pdf_type] [pdf_params...]
 // deposition_mode: brute | tiling | sorting
 // VRMode: basic | MXE
 // RhsMode: MC | VR
@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
     if (argc > 1) N_GRID_X = std::atoi(argv[1]);
     if (argc > 2) N_GRID_Y = std::atoi(argv[2]);
     if (argc > 3) N_PARTICLES = std::atoi(argv[3]);
-    if (argc > 4) DT = std::atof(argv[4]);
+    if (argc > 4) CFL = std::atof(argv[4]);
     if (argc > 5) NSteps = std::atof(argv[5]);
     if (argc > 6) Lx = std::atof(argv[6]);
     if (argc > 7) Ly = std::atof(argv[7]);
@@ -105,9 +105,13 @@ int main(int argc, char** argv) {
         }
     }
 
+    // compute DT given CFL and grid size
+    DT = CFL*std::min(Lx/N_GRID_X, Ly/N_GRID_Y);
+
     std::cout << "N_GRID_X: " << N_GRID_X << "\n";
     std::cout << "N_GRID_Y: " << N_GRID_Y << "\n";
     std::cout << "N_PARTICLES: " << N_PARTICLES << "\n";
+    std::cout << "CFL: " << CFL << "\n";
     std::cout << "DT: " << DT << "\n";
     std::cout << "NSteps: " << NSteps << "\n";
     std::cout << "Lx: " << Lx << "\n";

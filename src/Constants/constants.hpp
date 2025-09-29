@@ -27,6 +27,7 @@ extern int grid_size;     ///< Total number of grid cells (N_GRID_X * N_GRID_Y)
 // ----------------------------
 extern int N_PARTICLES;        ///< Number of particles
 extern float_type DT;               ///< Time step
+extern float_type CFL;               ///< CFL
 extern int NSteps;             ///< Number of simulation steps
 extern float_type Lx;               ///< Domain size in X
 extern float_type Ly;               ///< Domain size in Y
@@ -38,7 +39,8 @@ extern int Nm;                 ///< Number of moments
 // ----------------------------
 // Physical constants
 // ----------------------------
-extern float_type Q_OVER_M;    ///< Charge-to-mass ratio (q/m)
+extern float_type QP;    ///< Charge of each particle
+extern float_type MP;    ///< Mass of each particle
 
 // ----------------------------
 // CUDA kernel configuration
