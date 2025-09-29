@@ -111,7 +111,8 @@ __global__ void update_weights(
     float_type* __restrict__ EyVR,
     int num_cells,
     int n_particles,
-    float_type dt
+    float_type dt,
+    float_type q_m
 ) {
     int cell = blockIdx.x * blockDim.x + threadIdx.x;
     if (cell >= num_cells) return;
@@ -124,7 +125,7 @@ __global__ void update_weights(
     int end   = d_cell_offsets[cell + 1];
     int Npc = end - start;
 
-    if (Npc < 100) return;
+    if (Npc < 50) return;
 
     float_type p[Nm] = {0.0};
     float_type pt[Nm] = {0.0};
@@ -164,8 +165,8 @@ __global__ void update_weights(
     }*/
 
     // correct moments using Ex and Ey
-    pt[0] = dt * NVR[cell]*ExVR[cell];
-    pt[1] = dt * NVR[cell]*EyVR[cell];
+    pt[0] += q_m * dt * NVR[cell]*ExVR[cell];
+    pt[1] += q_m * dt * NVR[cell]*EyVR[cell];
     //pt[2] -= dt * NVR[cell]*(UxVR[cell]*ExVR[cell] + UyVR[cell]*EyVR[cell]);
 
     /*
@@ -316,7 +317,7 @@ void update_weights_dispatch(
 
     switch (Nm) {
         case 3:
-            update_weights<3><<<blocksPerGrid, threadsPerBlock>>>(vx, vy, vx_old, vy_old, d_cell_offsets, w, wold, NVR, UxVR, UyVR, ExVR, EyVR, num_cells, N_PARTICLES, DT);
+            update_weights<3><<<blocksPerGrid, threadsPerBlock>>>(vx, vy, vx_old, vy_old, d_cell_offsets, w, wold, NVR, UxVR, UyVR, ExVR, EyVR, num_cells, N_PARTICLES, DT, QP/MP);
             break;
         // Add more cases as needed
         default:

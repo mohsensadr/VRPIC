@@ -12,6 +12,8 @@ ParticleContainer::ParticleContainer(int n_particles_) : n_particles(n_particles
     cudaMalloc(&d_vy_old, bytes);
     cudaMalloc(&d_w, bytes);
     cudaMalloc(&d_wold, bytes);
+    qp = QP;
+    mp = MP;
 }
 
 ParticleContainer::~ParticleContainer() {
@@ -32,11 +34,11 @@ __device__ int periodic_index(int i, int N) {
 void ParticleContainer::update_velocity(float_type *Ex, float_type *Ey,
                                         int N_GRID_X, int N_GRID_Y,
                                         float_type Lx, float_type Ly,
-                                        float_type DT, float_type Q_OVER_M) 
+                                        float_type DT) 
 {
     update_velocity_2d<<<blocksPerGrid, threadsPerBlock>>>(
         d_x, d_y, d_vx, d_vy, Ex, Ey, n_particles,
-        N_GRID_X, N_GRID_Y, Lx, Ly, DT, Q_OVER_M
+        N_GRID_X, N_GRID_Y, Lx, Ly, DT, qp/mp
     );
     cudaDeviceSynchronize();
 }
@@ -78,7 +80,7 @@ __global__ void update_velocity_2d(float_type *x, float_type *y, float_type *vx,
             int N_GRID_X, int N_GRID_Y,
             float_type Lx, float_type Ly,
             float_type DT,
-            float_type Q_OVER_M) {
+            float_type q_m) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= n_particles) return;
 
@@ -108,8 +110,8 @@ __global__ void update_velocity_2d(float_type *x, float_type *y, float_type *vx,
     float_type Exi = w00 * Ex[i00] + w01 * Ex[i01] + w10 * Ex[i10] + w11 * Ex[i11];
     float_type Eyi = w00 * Ey[i00] + w01 * Ey[i01] + w10 * Ey[i10] + w11 * Ey[i11];
 
-    vx[i] += Q_OVER_M * Exi * DT;
-    vy[i] += Q_OVER_M * Eyi * DT;
+    vx[i] += q_m * Exi * DT;
+    vy[i] += q_m * Eyi * DT;
 }
 
 __global__ void update_position_2d(float_type *x, float_type *y, float_type *vx, float_type *vy,
