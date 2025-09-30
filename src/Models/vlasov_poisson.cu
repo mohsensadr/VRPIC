@@ -23,7 +23,7 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
     dx = Lx/N_GRID_X;
     dy = Ly/N_GRID_Y;
     grid_size = N_GRID_X*N_GRID_Y;
-    QP = -Lx*Ly/N_PARTICLES;
+    QP = Lx*Ly/N_PARTICLES;
     MP = 1.0;
 
     ParticleContainer pc(N_PARTICLES);

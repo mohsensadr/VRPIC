@@ -165,8 +165,8 @@ __global__ void update_weights(
     }*/
 
     // correct moments using Ex and Ey
-    pt[0] += q_m * dt * NVR[cell]*ExVR[cell];
-    pt[1] += q_m * dt * NVR[cell]*EyVR[cell];
+    pt[0] += - dt * NVR[cell]*ExVR[cell];
+    pt[1] += - dt * NVR[cell]*EyVR[cell];
     //pt[2] -= dt * NVR[cell]*(UxVR[cell]*ExVR[cell] + UyVR[cell]*EyVR[cell]);
 
     /*

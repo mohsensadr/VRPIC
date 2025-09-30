@@ -110,8 +110,8 @@ __global__ void update_velocity_2d(float_type *x, float_type *y, float_type *vx,
     float_type Exi = w00 * Ex[i00] + w01 * Ex[i01] + w10 * Ex[i10] + w11 * Ex[i11];
     float_type Eyi = w00 * Ey[i00] + w01 * Ey[i01] + w10 * Ey[i10] + w11 * Ey[i11];
 
-    vx[i] += Exi * DT;
-    vy[i] += Eyi * DT;
+    vx[i] += - Exi * DT;
+    vy[i] += - Eyi * DT;
 }
 
 __global__ void update_position_2d(float_type *x, float_type *y, float_type *vx, float_type *vy,
