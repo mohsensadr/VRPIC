@@ -22,8 +22,6 @@ template<int Nm>
 __global__ void update_weights(
     const float_type* __restrict__ vx,
     const float_type* __restrict__ vy,
-    const float_type* __restrict__ vx_old,
-    const float_type* __restrict__ vy_old,
     const int* __restrict__ d_cell_offsets,
     float_type* __restrict__ w,
     float_type* __restrict__ wold,
@@ -32,6 +30,9 @@ __global__ void update_weights(
     float_type* __restrict__ UyVR,
     float_type* __restrict__ ExVR,
     float_type* __restrict__ EyVR,
+    float_type* __restrict__ d_pt0,
+    float_type* __restrict__ d_pt1,
+    float_type* __restrict__ d_pt2,   
     int num_cells,
     int n_particles,
     float_type dt
@@ -40,8 +41,6 @@ __global__ void update_weights(
 void update_weights_dispatch(
     const float_type* vx,
     const float_type* vy,
-    const float_type* vx_old,
-    const float_type* vy_old,
     const int* d_cell_offsets,
     float_type* w,
     float_type* wold,
@@ -50,6 +49,9 @@ void update_weights_dispatch(
     float_type* UyVR,
     float_type* ExVR,
     float_type* EyVR,
+    float_type* d_pt0,
+    float_type* d_pt1,
+    float_type* d_pt2,   
     int num_cells,
     int Nm
 );

@@ -99,8 +99,6 @@ template<int Nm>
 __global__ void update_weights(
     const float_type* __restrict__ vx,
     const float_type* __restrict__ vy,
-    const float_type* __restrict__ vx_old,
-    const float_type* __restrict__ vy_old,
     const int* __restrict__ d_cell_offsets,
     float_type* __restrict__ w,
     float_type* __restrict__ wold,
@@ -109,6 +107,9 @@ __global__ void update_weights(
     float_type* __restrict__ UyVR,
     float_type* __restrict__ ExVR,
     float_type* __restrict__ EyVR,
+    float_type* __restrict__ d_pt0,
+    float_type* __restrict__ d_pt1,
+    float_type* __restrict__ d_pt2,    
     int num_cells,
     int n_particles,
     float_type dt,
@@ -139,10 +140,14 @@ __global__ void update_weights(
         sumwold += wold[i];
         for (int j = 0; j < Nm; j++) {
             p[j] += mom<Nm>(vx[i], vy[i], Ux, Uy, j);
-            pt[j] += (1.0 - wold[i]) * mom<Nm>(vx_old[i], vy_old[i], Ux, Uy, j);
+            //pt[j] += (1.0 - wold[i]) * mom<Nm>(vx_old[i], vy_old[i], Ux, Uy, j);
             pw[j] += w[i] * mom<Nm>(vx[i], vy[i], Ux, Uy, j);
         }
     }
+    
+    pt[0] = d_pt0[cell];
+    pt[1] = d_pt1[cell];
+    pt[2] = d_pt2[cell];
 
     /*
     printf("\n <R>: ");
@@ -301,8 +306,6 @@ __global__ void update_weights(
 void update_weights_dispatch(
     const float_type* vx,
     const float_type* vy,
-    const float_type* vx_old,
-    const float_type* vy_old,
     const int* d_cell_offsets,
     float_type* w,
     float_type* wold,
@@ -311,13 +314,16 @@ void update_weights_dispatch(
     float_type* UyVR,
     float_type* ExVR,
     float_type* EyVR,
+    float_type* d_pt0,
+    float_type* d_pt1,
+    float_type* d_pt2,
     int num_cells,
     int Nm
 ) {
 
     switch (Nm) {
         case 3:
-            update_weights<3><<<blocksPerGrid, threadsPerBlock>>>(vx, vy, vx_old, vy_old, d_cell_offsets, w, wold, NVR, UxVR, UyVR, ExVR, EyVR, num_cells, N_PARTICLES, DT, QP/MP);
+            update_weights<3><<<blocksPerGrid, threadsPerBlock>>>(vx, vy, d_cell_offsets, w, wold, NVR, UxVR, UyVR, ExVR, EyVR, d_pt0, d_pt1, d_pt2, num_cells, N_PARTICLES, DT, QP/MP);
             break;
         // Add more cases as needed
         default:

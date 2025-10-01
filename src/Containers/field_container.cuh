@@ -25,6 +25,10 @@ public:
     float_type *d_ExVR = nullptr;
     float_type *d_EyVR = nullptr;
 
+    float_type *d_pt0 = nullptr;
+    float_type *d_pt1 = nullptr;
+    float_type *d_pt2 = nullptr;
+
     float_type dx, dy;
     float_type xmin, ymin;
     int nx, ny;
@@ -53,6 +57,10 @@ public:
         cudaMalloc(&d_phiVR, bytes);
         cudaMalloc(&d_ExVR, bytes);
         cudaMalloc(&d_EyVR, bytes);
+
+        cudaMalloc(&d_pt0, bytes);
+        cudaMalloc(&d_pt1, bytes);
+        cudaMalloc(&d_pt2, bytes);
     }
 
     ~FieldContainer() {
@@ -71,6 +79,10 @@ public:
         cudaFree(d_phiVR);
         cudaFree(d_ExVR);
         cudaFree(d_EyVR);
+
+        cudaFree(d_pt0);
+        cudaFree(d_pt1);
+        cudaFree(d_pt2);
     }
 
     // Optional: zero out all field arrays
@@ -85,5 +97,9 @@ public:
         cudaMemset(d_UxVR, 0, bytes);
         cudaMemset(d_UyVR, 0, bytes);
         cudaMemset(d_TVR, 0, bytes);
+      
+        cudaMemset(d_pt0, 0, bytes);
+        cudaMemset(d_pt1, 0, bytes);
+        cudaMemset(d_pt2, 0, bytes);
     }
 };

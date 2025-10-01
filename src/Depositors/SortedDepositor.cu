@@ -21,6 +21,15 @@ void SortedDepositor::deposit(ParticleContainer& pc, FieldContainer& fc, Sorting
 
     deposit_temperature_2d_VR_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, pc.d_w, fc.d_UxVR, fc.d_UyVR, sorter.d_cell_offsets, fc.d_NVR, fc.d_TVR, num_cells);
     cudaDeviceSynchronize();
+
+    deposit_pt_2d_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, pc.d_w, fc.d_UxVR, fc.d_UyVR, sorter.d_cell_offsets, fc.d_pt0, 0, num_cells);
+    cudaDeviceSynchronize();
+
+    deposit_pt_2d_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, pc.d_w, fc.d_UxVR, fc.d_UyVR, sorter.d_cell_offsets, fc.d_pt1, 1, num_cells);
+    cudaDeviceSynchronize();
+
+    deposit_pt_2d_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, pc.d_w, fc.d_UxVR, fc.d_UyVR, sorter.d_cell_offsets, fc.d_pt2, 2, num_cells);
+    cudaDeviceSynchronize();
 }
 
 __global__ void deposit_density_2d_sorted(
@@ -195,4 +204,44 @@ __global__ void deposit_temperature_2d_VR_sorted(
     temp_sum += Navg;// kb/m=1 here
 
     TVR[cell] = temp_sum / NVR[cell];
+}
+
+__global__ void deposit_pt_2d_sorted(
+    const float_type* __restrict__ vx,
+    const float_type* __restrict__ vy,
+    const float_type* __restrict__ w,
+    const float_type* __restrict__ UxVR,
+    const float_type* __restrict__ UyVR,
+    const int*   __restrict__ d_cell_offsets,
+    float_type* d_pt,
+    int j,
+    int num_cells
+) {
+    int cell = blockIdx.x * blockDim.x + threadIdx.x;
+    if (cell >= num_cells) return;
+
+    int start = d_cell_offsets[cell];
+    int end   = d_cell_offsets[cell + 1]; // exclusive
+    int npart = end - start;
+
+    if (npart < 1.0) return;
+
+    float_type temp_sum = 0.0;
+
+    for (int i = start; i < end; ++i) {
+        float_type temp = 0.0;
+        float_type dvx = vx[i] - UxVR[cell];
+        float_type dvy = vy[i] - UyVR[cell];
+        if(j==0){
+          temp = dvx;
+        }
+        else if(j==1){
+          temp = dvy;
+        }
+        else if(j==2){
+          temp = dvx*dvx + dvy*dvy;
+        }
+        temp_sum += (1.0 - w[i]) * temp;
+    }
+    d_pt[cell] = temp_sum;
 }
