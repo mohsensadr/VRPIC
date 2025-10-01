@@ -61,3 +61,15 @@ __global__ void deposit_temperature_2d_VR_sorted(
     float_type* TVR,                               // output: VR temperature per cell
     int num_cells
 );
+
+__global__ void deposit_pt_2d_sorted(
+    const float_type* __restrict__ vx,
+    const float_type* __restrict__ vy,
+    const float_type* __restrict__ w,
+    const float_type* __restrict__ UxVR,
+    const float_type* __restrict__ UyVR,
+    const int*   __restrict__ d_cell_offsets,
+    float_type* d_pt,
+    int j,
+    int num_cells
+);

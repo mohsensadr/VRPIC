@@ -23,7 +23,7 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
     dx = Lx/N_GRID_X;
     dy = Ly/N_GRID_Y;
     grid_size = N_GRID_X*N_GRID_Y;
-    QP = -1.0/N_PARTICLES;
+    QP = Lx*Ly/N_PARTICLES;
     MP = 1.0;
 
     ParticleContainer pc(N_PARTICLES);
@@ -80,9 +80,6 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
     size_t size = N_PARTICLES * sizeof(float_type);
 
     for (int step = 1; step < NSteps+1; ++step) {
-        // save old velocity
-        pc.save_old_velocity();
-
         // compute Electric field
         solve_poisson_periodic(fc);
         cudaDeviceSynchronize();
@@ -109,7 +106,7 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
 
         // MxE to conserve equil. moments.
         if (vrMode == VRMode::MXE) {
-          update_weights_dispatch(pc.d_vx, pc.d_vy, pc.d_vx_old, pc.d_vy_old, sorter.d_cell_offsets, pc.d_w, pc.d_wold, fc.d_NVR, fc.d_UxVR, fc.d_UyVR, fc.d_ExVR, fc.d_EyVR, grid_size, Nm);
+          update_weights_dispatch(pc.d_vx, pc.d_vy, sorter.d_cell_offsets, pc.d_w, pc.d_wold, fc.d_NVR, fc.d_UxVR, fc.d_UyVR, fc.d_ExVR, fc.d_EyVR, fc.d_pt0, fc.d_pt1, fc.d_pt2, grid_size, Nm);
           cudaDeviceSynchronize();
         }
         
