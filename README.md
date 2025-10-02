@@ -19,7 +19,7 @@ The **Vlasov–Poisson equation** describes the evolution of a plasma or charged
 - **Fully GPU-accelerated**: Uses CUDA to parallelize moment computation, particle updates, and field (Poisson) solver.
 - **Variance reduction (VR)**: Implements control variate methods to reduce noise in moment computations.
 - **Importance weighting**: Dynamically adjusts particle weights using local Maxwellian-Boltzmann distribution as control variate.
-- **Self-consistent field solving**: Solves the Poisson equation using FFT.
+- **Self-consistent field solving**: Solves the Poisson equation using FFT method.
 - **Post-processing output**: Dumps moment fields for visualization and diagnostics.
 
 ---
