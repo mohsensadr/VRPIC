@@ -12,7 +12,7 @@
  */
 
 struct PDF_position {
-    int type;  // 0=gaussian, 1=cosine, 2=double_gaussian
+    int type;  // 0=gaussian, 1=cosine, 2=double_gaussian, 3=uniform-cosine
     
     // Parameters for all PDF types
     float_type params[8];  // Store all parameters in a flat array
@@ -29,6 +29,7 @@ struct PDF_position {
         params[0] = variance;
     }
     
+    /*
     // Constructor for Cosine
     __device__ __host__ PDF_position(float_type amplitude, float_type wavenumber, float_type length_x, float_type length_y, int cosine_type) 
         : type(1), Lx(length_x), Ly(length_y) {
@@ -36,6 +37,22 @@ struct PDF_position {
         params[1] = wavenumber;
         params[2]  = (params[0] * sinf(Lx * wavenumber) + Lx * wavenumber) / wavenumber ;
         params[2] *= (params[0] * sinf(Ly * wavenumber) + Ly * wavenumber) / wavenumber ;
+    }*/
+
+    __device__ __host__ 
+    PDF_position(float_type amplitude, float_type wavenumber, float_type length_x, float_type length_y, int which_type) 
+        : type(which_type), Lx(length_x), Ly(length_y) 
+    {
+        params[0] = amplitude;
+        params[1] = wavenumber;
+
+        if (which_type == 1) {  // cosine
+            params[2]  = (params[0] * sinf(Lx * wavenumber) + Lx * wavenumber) / wavenumber;
+            params[2] *= (params[0] * sinf(Ly * wavenumber) + Ly * wavenumber) / wavenumber;
+        } 
+        else if (which_type == 3) { // uniform-cosine
+            params[2] = (params[0] * sinf(Ly * wavenumber) + Ly * wavenumber) / wavenumber;
+        }
     }
     
     // Constructor for Double Gaussian
@@ -53,6 +70,15 @@ struct PDF_position {
         params[7] = w2;
     }
 
+    /*
+    // Constructor for Uniform-Cosine
+    __device__ __host__ PDF_position(float_type amplitude, float_type wavenumber, float_type length_x, float_type length_y, int uniform_cosine_type) 
+        : type(1), Lx(length_x), Ly(length_y) {
+        params[0] = amplitude;
+        params[1] = wavenumber;
+        params[2] = (params[0] * sin(Ly * wavenumber) + Ly * wavenumber) / wavenumber ;
+    }
+    */
     __device__ __host__ float_type normalizer() const {
         switch(type) {
             case 0: // gaussian
@@ -61,6 +87,8 @@ struct PDF_position {
                 return (params[0] * sin(Lx * params[1]) + Lx * params[1]) / params[1] * (params[0] * sin(Ly * params[1]) + Ly * params[1]) / params[1];
             case 2: // double_gaussian
                 return 2.0 * PI_F * (params[6] * params[0] + params[7] * params[1]);
+            case 3: // uniform - cosine
+                return 1.0/Lx * (params[0] * sin(Ly * params[1]) + Ly * params[1]) / params[1];
             default:
                 return 1.0;
         }
@@ -73,7 +101,7 @@ struct PDF_position {
             case 1: // cosine
                 return  (1.0 + params[0]) / params[2] * (1.0 + params[0]) / params[2];
             case 2: // double_gaussian
-                return 1.0;
+                return 1.0/Lx * (1.0 + params[0]) / params[2];
             default:
                 return 1.0;
         }
@@ -93,6 +121,8 @@ struct PDF_position {
                 float_type g2 = params[7] * exp(-((x-params[4])*(x-params[4]) + (y-params[5])*(y-params[5]))/(2.0*params[1]));
                 return g1 + g2;
             }
+            case 3:
+                return 1.0/Lx * (1.0 + params[0] * cos(params[1] * y)) / params[2];
             default:
                 return 1.0;
         }
@@ -112,6 +142,10 @@ __device__ __host__ inline PDF_position make_double_gaussian_pdf(float_type var1
                                                                float_type x1, float_type y1, float_type x2, float_type y2,
                                                                float_type w1, float_type w2, float_type Lx, float_type Ly) {
     return PDF_position(var1, var2, x1, y1, x2, y2, w1, w2, Lx, Ly, 2);
+}
+
+__device__ __host__ inline PDF_position make_uniform_cosine_pdf(float_type amplitude, float_type wavenumber, float_type Lx, float_type Ly) {
+    return PDF_position(amplitude, wavenumber, Lx, Ly, 3);
 }
 
 #endif // PDF_CUH 

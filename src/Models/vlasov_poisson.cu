@@ -6,12 +6,12 @@
 
 #include "Constants/constants.hpp"
 #include "Solvers/solver.cuh"
-#include "Initializations/initialization.cuh"
+#include "Initializations/initialization.h"
 #include "IOs/IO.h"
 #include "Depositors/moments.cuh"
 #include "Containers/particle_container.cuh"
 #include "Containers/field_container.cuh"
-#include "Distributions/pdfs.cuh"
+#include "Distributions/pdfs.h"
 #include "Sorters/sorting.cuh"
 #include "VRs/MxE.cuh"
 
@@ -39,7 +39,11 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
     } else if (pdf_type == "double_gaussian" || pdf_type == "DoubleGaussian") {
         pdf_position = make_double_gaussian_pdf(pdf_params[0], pdf_params[1], pdf_params[2], pdf_params[3], 
                                               pdf_params[4], pdf_params[5], pdf_params[6], pdf_params[7], Lx, Ly);
-    } else {
+    }
+    else if (pdf_type == "uniformcosine" || pdf_type == "UniformCosine") {
+        pdf_position = make_cosine_pdf(pdf_params[0], pdf_params[1], Lx, Ly);
+    }
+    else {
         throw std::invalid_argument("Unknown PDF type: " + pdf_type);
     }
 

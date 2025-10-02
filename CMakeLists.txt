@@ -23,7 +23,7 @@ set(CMAKE_CUDA_ARCHITECTURES 70)
 
 # Precision type (default = float)
 # build with -DFLOAT_TYPE=float or double
-set(FLOAT_TYPE "float" CACHE STRING "Floating point type (float or double)")
+set(FLOAT_TYPE "double" CACHE STRING "Floating point type (float or double)")
 message(STATUS "Using FLOAT_TYPE=${FLOAT_TYPE}")
 
 # Set the source directory
