@@ -19,11 +19,15 @@ set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 # Set CUDA compute capability (adjust for your GPU)
-set(CMAKE_CUDA_ARCHITECTURES 70)
+# e.g. -DCMAKE_CUDA_ARCHITECTURES=80 for A100
+if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES 70)  # default fallback
+endif()
+message(STATUS "CUDA architectures = ${CMAKE_CUDA_ARCHITECTURES}")
 
 # Precision type (default = float)
 # build with -DFLOAT_TYPE=float or double
-set(FLOAT_TYPE "float" CACHE STRING "Floating point type (float or double)")
+set(FLOAT_TYPE "double" CACHE STRING "Floating point type (float or double)")
 message(STATUS "Using FLOAT_TYPE=${FLOAT_TYPE}")
 
 # Set the source directory
