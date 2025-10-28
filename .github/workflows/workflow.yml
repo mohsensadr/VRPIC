@@ -30,7 +30,7 @@ jobs:
       - name: Build project
         run: |
           cd build
-          make -j$(nproc)
+          make -j$(nproc) -DCMAKE_CUDA_ARCHITECTURES=70
 
       - name: Run clang-tidy on C++/CUDA files
         run: |
