@@ -131,7 +131,6 @@ __global__ void update_weights(
     float_type p[Nm] = {0.0};
     float_type pt[Nm] = {0.0};
     float_type p0[Nm] = {0.0};
-    float_type pw[Nm] = {0.0};
     p0[2] = 2.0*Navg; // energy is assumed 1.0 for the control variate here.
 
     float_type sumwold = 0.0;
@@ -141,44 +140,20 @@ __global__ void update_weights(
         for (int j = 0; j < Nm; j++) {
             p[j] += mom<Nm>(vx[i], vy[i], Ux, Uy, j);
             //pt[j] += (1.0 - wold[i]) * mom<Nm>(vx_old[i], vy_old[i], Ux, Uy, j);
-            pw[j] += w[i] * mom<Nm>(vx[i], vy[i], Ux, Uy, j);
         }
     }
-    
+    // \sum[(1-wold)*R(vold)] already computed on a grid
     pt[0] = d_pt0[cell];
     pt[1] = d_pt1[cell];
     pt[2] = d_pt2[cell];
 
-    /*
-    printf("\n <R>: ");
-    for (int i = 0; i < Nm; i++) {
-        printf("[%d]=%f | ", i, p[i]);
-    }
-
-    printf("\n <(1-w)R>:");
-    for (int i = 0; i < Nm; i++) {
-        printf("[%d]=%f | ", i, pt[i]);
-    }*/
-
     for (int i = 0; i < Nm; i++) {
         pt[i] += p0[i];
     }
-    /*
-    printf("\n <R>0 + <(1-w)R>:");
-    for (int i = 0; i < Nm; i++) {
-        printf(" [%d]=%f |", i, pt[i]);
-    }*/
 
     // correct moments using Ex and Ey
     pt[0] += - dt * NVR[cell]*ExVR[cell];
     pt[1] += - dt * NVR[cell]*EyVR[cell];
-    //pt[2] -= dt * NVR[cell]*(UxVR[cell]*ExVR[cell] + UyVR[cell]*EyVR[cell]);
-
-    /*
-    printf("\n <R>_{t+dt}:");
-    for (int i = 0; i < Nm; i++) {
-        printf("[%d]=%f | ", i, pt[i]);
-    }*/
 
     // now compute target <w*R(v)> moments: 
     // <R(v)>VR = <R(v)>0 + <(1-w)*R(v)> 
@@ -189,27 +164,9 @@ __global__ void update_weights(
         p[i] = p0[i] + p[i] - pt[i];
     }
 
-    /*
-    printf("\n <WR>_{old}:");
-    for (int i = 0; i < Nm; i++) {
-        printf("[%d]=%f | ", i, pw[i]);
-    }
-
-    printf("\n <WR>_{t+dt}:");
-    for (int i = 0; i < Nm; i++) {
-        printf("[%d]=%f | ", i, p[i]);
-    }*/
-
-
     for (int i = 0; i < Nm; i++) {
         p[i] = p[i]/Npc;
     }
-
-    /*
-    printf("\n <WR>_{t+dt}/Npc:");
-    for (int i = 0; i < Nm; i++) {
-        printf("[%d]=%f | ", i, p[i]);
-    }*/
 
     for (int i = start; i < end; i++)
         wold[i] = w[i];
