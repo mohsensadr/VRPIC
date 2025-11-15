@@ -23,4 +23,5 @@ void compute_moments(ParticleContainer& pc, FieldContainer& fc, Sorting& sorter)
     fc.setZero();
     
     depositor->deposit(pc, fc, sorter);
+    cudaDeviceSynchronize();
 }
