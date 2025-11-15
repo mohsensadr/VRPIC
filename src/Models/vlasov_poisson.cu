@@ -83,7 +83,7 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
         cudaDeviceSynchronize();
 
         // map weights from global to local eq.
-        pc.map_weights(fc.d_NVR, fc.d_UxVR, fc.d_UyVR, fc.d_TVR, N_GRID_X, N_GRID_Y, Lx, Ly, true);
+        pc.map_weights(fc, true);
         cudaDeviceSynchronize();
 
         // Push particles in the velocity space
@@ -95,8 +95,7 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
         cudaDeviceSynchronize();
 
         // map weights from local to global eq.
-        pc.map_weights(fc.d_NVR, fc.d_UxVR, fc.d_UyVR, fc.d_TVR, N_GRID_X, N_GRID_Y, Lx, Ly, false);
-        cudaDeviceSynchronize();
+        pc.map_weights(fc, false);
 
         // MxE to conserve equil. moments.
         if (vrMode == VRMode::MXE) {

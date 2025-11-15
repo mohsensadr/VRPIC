@@ -1,5 +1,6 @@
 #pragma once
 #include "Constants/constants.hpp"
+#include "Containers/field_container.cuh"
 #include <cuda_runtime.h>
 #include <stdexcept>
 
@@ -29,8 +30,7 @@ public:
 
     void save_old_velocity();
 
-    void map_weights(float_type *NVR, float_type *UxVR, float_type *UyVR, float_type *TVR,
-                     int N_GRID_X, int N_GRID_Y, float_type Lx, float_type Ly, bool global_to_local);
+    void map_weights(FieldContainer &fc, bool global_to_local);
 };
 
 // Kernel declarations only
