@@ -21,10 +21,9 @@ public:
     ParticleContainer(int n_particles_);
     ~ParticleContainer();
 
-    void update_velocity(float_type *Ex, float_type *Ey,
-                         int N_GRID_X, int N_GRID_Y,
-                         float_type Lx, float_type Ly,
-                         float_type DT);
+    void kick(FieldContainer &fc);
+
+    void kick_VR(FieldContainer &fc);
 
     void update_position(float_type Lx, float_type Ly, float_type DT);
 

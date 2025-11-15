@@ -28,17 +28,24 @@ __device__ int periodic_index(int i, int N) {
     return (i + N) % N;
 }
 
-void ParticleContainer::update_velocity(float_type *Ex, float_type *Ey,
-                                        int N_GRID_X, int N_GRID_Y,
-                                        float_type Lx, float_type Ly,
-                                        float_type DT) 
+void ParticleContainer::kick(FieldContainer &fc) 
 {
     update_velocity_2d<<<blocksPerGrid, threadsPerBlock>>>(
-        d_x, d_y, d_vx, d_vy, Ex, Ey, n_particles,
+        d_x, d_y, d_vx, d_vy, fc.d_Ex, fc.d_Ey, n_particles,
         N_GRID_X, N_GRID_Y, Lx, Ly, DT, qp/mp
     );
     cudaDeviceSynchronize();
 }
+
+void ParticleContainer::kick_VR(FieldContainer &fc) 
+{
+    update_velocity_2d<<<blocksPerGrid, threadsPerBlock>>>(
+        d_x, d_y, d_vx, d_vy, fc.d_ExVR, fc.d_EyVR, n_particles,
+        N_GRID_X, N_GRID_Y, Lx, Ly, DT, qp/mp
+    );
+    cudaDeviceSynchronize();
+}
+
 
 void ParticleContainer::update_position(float_type Lx, float_type Ly, float_type DT) {
     update_position_2d<<<blocksPerGrid, threadsPerBlock>>>(

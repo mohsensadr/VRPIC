@@ -89,10 +89,9 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
         // Push particles in the velocity space
         // Use either MC or VR density estimtes in the rhs of the Poisson to get E
         if (rhsMode == RhsMode::VR)
-          pc.update_velocity(fc.d_ExVR, fc.d_EyVR, N_GRID_X, N_GRID_Y, Lx, Ly, DT);
+          pc.kick_VR(fc);
         else
-          pc.update_velocity(fc.d_Ex, fc.d_Ey, N_GRID_X, N_GRID_Y, Lx, Ly, DT);
-        cudaDeviceSynchronize();
+          pc.kick(fc);
 
         // map weights from local to global eq.
         pc.map_weights(fc, false);
