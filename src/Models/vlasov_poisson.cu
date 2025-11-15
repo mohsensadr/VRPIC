@@ -44,90 +44,66 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
     }
 
     // initialize particle velocity and position
-    initialize_particles<<<blocksPerGrid, threadsPerBlock>>>(
-        pc.d_x, pc.d_y, pc.d_vx, pc.d_vy, Lx, Ly, N_PARTICLES, pdf_position
-    );
-    cudaDeviceSynchronize();
+    initialize_particles(pc, pdf_position);
 
     // compute moments, needed to find emperical density field
-    if (depositionMode == DepositionMode::SORTING) {
-      sorter.sort_particles_by_cell();
-    }
+    if (depositionMode == DepositionMode::SORTING)
+        sorter.sort_particles_by_cell();
     compute_moments(pc, fc, sorter);
-    cudaDeviceSynchronize();
 
     // set particle weights given estimted and exact fields
-    initialize_weights<<<blocksPerGrid, threadsPerBlock>>>(
-        pc.d_x, pc.d_y, fc.d_N, pc.d_w, N_PARTICLES, N_GRID_X, N_GRID_Y, Lx, Ly, pdf_position
-    );
-    cudaDeviceSynchronize();
+    initialize_weights(pc, fc, pdf_position);
 
     // recompute moments given weights, mainly for VR estimate
-    if (depositionMode == DepositionMode::SORTING) {
-      sorter.sort_particles_by_cell();
-    }
+    if (depositionMode == DepositionMode::SORTING)
+        sorter.sort_particles_by_cell();
     compute_moments(pc, fc, sorter);
-    cudaDeviceSynchronize();
 
     // compute Electric field
     solve_poisson_periodic(fc);
-    cudaDeviceSynchronize();
 
     // write out initial fields
     post_proc(fc, 0);
-    cudaDeviceSynchronize();
 
     size_t size = N_PARTICLES * sizeof(float_type);
 
     for (int step = 1; step < NSteps+1; ++step) {
         // compute Electric field
         solve_poisson_periodic(fc);
-        cudaDeviceSynchronize();
 
         // update wold given w
         cudaMemcpy(pc.d_wold, pc.d_w, size, cudaMemcpyDeviceToDevice);
         cudaDeviceSynchronize();
 
         // map weights from global to local eq.
-        pc.map_weights(fc.d_NVR, fc.d_UxVR, fc.d_UyVR, fc.d_TVR, N_GRID_X, N_GRID_Y, Lx, Ly, true);
-        cudaDeviceSynchronize();
+        pc.map_weights(fc, true);
 
         // Push particles in the velocity space
         // Use either MC or VR density estimtes in the rhs of the Poisson to get E
         if (rhsMode == RhsMode::VR)
-          pc.update_velocity(fc.d_ExVR, fc.d_EyVR, N_GRID_X, N_GRID_Y, Lx, Ly, DT);
+            pc.kick_VR(fc);
         else
-          pc.update_velocity(fc.d_Ex, fc.d_Ey, N_GRID_X, N_GRID_Y, Lx, Ly, DT);
-        cudaDeviceSynchronize();
+            pc.kick(fc);
 
         // map weights from local to global eq.
-        pc.map_weights(fc.d_NVR, fc.d_UxVR, fc.d_UyVR, fc.d_TVR, N_GRID_X, N_GRID_Y, Lx, Ly, false);
-        cudaDeviceSynchronize();
+        pc.map_weights(fc, false);
 
         // MxE to conserve equil. moments.
-        if (vrMode == VRMode::MXE) {
-          update_weights_dispatch(pc.d_vx, pc.d_vy, sorter.d_cell_offsets, pc.d_w, pc.d_wold, fc.d_NVR, fc.d_UxVR, fc.d_UyVR, fc.d_ExVR, fc.d_EyVR, fc.d_pt0, fc.d_pt1, fc.d_pt2, grid_size, Nm);
-          cudaDeviceSynchronize();
-        }
+        if (vrMode == VRMode::MXE)
+            update_weights(pc, fc, sorter);
         
         // push particles in the position space
-        pc.update_position(Lx, Ly, DT);
-        cudaDeviceSynchronize();
+        pc.update_position();
 
         // update moments
-        if (depositionMode == DepositionMode::SORTING) {
-          sorter.sort_particles_by_cell();
-          cudaDeviceSynchronize();
-        }
+        if (depositionMode == DepositionMode::SORTING)
+            sorter.sort_particles_by_cell();
 
         compute_moments(pc, fc, sorter);
-        cudaDeviceSynchronize();
 
         // print output
-        if (step % 10 == 0) {
+        if (step % 10 == 0)
             post_proc(fc, step);
-            cudaDeviceSynchronize();
-        }
     }
 
     std::cout << "Done.\n";

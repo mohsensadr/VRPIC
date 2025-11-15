@@ -325,4 +325,5 @@ void solve_poisson_periodic(FieldContainer& fc) {
     // Cleanup
     cudaFree(d_residual);
     cudaFree(d_rhs);
+    cudaDeviceSynchronize();
 }

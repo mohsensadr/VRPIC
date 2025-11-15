@@ -1,5 +1,6 @@
 // particle_container.cu
 #include "particle_container.cuh"
+#include "field_container.cuh"
 #include <cmath>
 
 ParticleContainer::ParticleContainer(int n_particles_) : n_particles(n_particles_) {
@@ -27,30 +28,36 @@ __device__ int periodic_index(int i, int N) {
     return (i + N) % N;
 }
 
-void ParticleContainer::update_velocity(float_type *Ex, float_type *Ey,
-                                        int N_GRID_X, int N_GRID_Y,
-                                        float_type Lx, float_type Ly,
-                                        float_type DT) 
+void ParticleContainer::kick(FieldContainer &fc) 
 {
     update_velocity_2d<<<blocksPerGrid, threadsPerBlock>>>(
-        d_x, d_y, d_vx, d_vy, Ex, Ey, n_particles,
+        d_x, d_y, d_vx, d_vy, fc.d_Ex, fc.d_Ey, n_particles,
         N_GRID_X, N_GRID_Y, Lx, Ly, DT, qp/mp
     );
     cudaDeviceSynchronize();
 }
 
-void ParticleContainer::update_position(float_type Lx, float_type Ly, float_type DT) {
+void ParticleContainer::kick_VR(FieldContainer &fc) 
+{
+    update_velocity_2d<<<blocksPerGrid, threadsPerBlock>>>(
+        d_x, d_y, d_vx, d_vy, fc.d_ExVR, fc.d_EyVR, n_particles,
+        N_GRID_X, N_GRID_Y, Lx, Ly, DT, qp/mp
+    );
+    cudaDeviceSynchronize();
+}
+
+
+void ParticleContainer::update_position() {
     update_position_2d<<<blocksPerGrid, threadsPerBlock>>>(
         d_x, d_y, d_vx, d_vy, n_particles, Lx, Ly, DT
     );
     cudaDeviceSynchronize();
 }
 
-void ParticleContainer::map_weights(float_type *NVR, float_type *UxVR, float_type *UyVR, float_type *TVR,
-                                    int N_GRID_X, int N_GRID_Y, float_type Lx, float_type Ly, bool global_to_local)
+void ParticleContainer::map_weights(FieldContainer &fc, bool global_to_local)
 {
     map_weights_2d<<<blocksPerGrid, threadsPerBlock>>>(
-        d_x, d_y, d_vx, d_vy, d_w, NVR, UxVR, UyVR, TVR, n_particles,
+        d_x, d_y, d_vx, d_vy, d_w, fc.d_NVR, fc.d_UxVR, fc.d_UyVR, fc.d_TVR, n_particles,
         N_GRID_X, N_GRID_Y, Lx, Ly, global_to_local
     );
     cudaDeviceSynchronize();

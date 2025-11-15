@@ -172,4 +172,5 @@ void Sorting::sort_particles_by_cell(cudaStream_t stream) {
 
     // ensure work completed
     cudaStreamSynchronize(stream);
+    cudaDeviceSynchronize();
 }

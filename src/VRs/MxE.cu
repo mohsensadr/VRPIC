@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "VRs/MxE.cuh"
 #include "Constants/constants.hpp"
+#include "Sorters/sorting.cuh"
 
 template<int Nm>
 __device__ void Gauss_Jordan(float_type H[Nm][Nm], float_type g[Nm], float_type x[Nm]) {
@@ -96,7 +97,7 @@ __device__ float_type mom(float_type u1, float_type u2, float_type U_1, float_ty
 }
 
 template<int Nm>
-__global__ void update_weights(
+__global__ void update_weights_kernel(
     const float_type* __restrict__ vx,
     const float_type* __restrict__ vy,
     const int* __restrict__ d_cell_offsets,
@@ -260,31 +261,17 @@ __global__ void update_weights(
     }
 }
 
-void update_weights_dispatch(
-    const float_type* vx,
-    const float_type* vy,
-    const int* d_cell_offsets,
-    float_type* w,
-    float_type* wold,
-    float_type* NVR,
-    float_type* UxVR,
-    float_type* UyVR,
-    float_type* ExVR,
-    float_type* EyVR,
-    float_type* d_pt0,
-    float_type* d_pt1,
-    float_type* d_pt2,
-    int num_cells,
-    int Nm
+void update_weights(
+    ParticleContainer &pc, FieldContainer &fc, Sorting &sorter
 ) {
-
     switch (Nm) {
         case 3:
-            update_weights<3><<<blocksPerGrid, threadsPerBlock>>>(vx, vy, d_cell_offsets, w, wold, NVR, UxVR, UyVR, ExVR, EyVR, d_pt0, d_pt1, d_pt2, num_cells, N_PARTICLES, DT, QP/MP);
+            update_weights_kernel<3><<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, sorter.d_cell_offsets, pc.d_w, pc.d_wold, fc.d_NVR, fc.d_UxVR, fc.d_UyVR, fc.d_ExVR, fc.d_EyVR, fc.d_pt0, fc.d_pt1, fc.d_pt2, grid_size, N_PARTICLES, DT, QP/MP);
             break;
         // Add more cases as needed
         default:
             printf("Unsupported Nm: %d\n", Nm);
             break;
     }
+    cudaDeviceSynchronize();
 }
