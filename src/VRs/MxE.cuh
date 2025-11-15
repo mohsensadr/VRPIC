@@ -1,6 +1,7 @@
 #pragma once
 #include <cuda_runtime.h>
 #include "Constants/constants.hpp"
+#include "Sorters/sorting.cuh"
 
 template <typename T>
 struct Tolerance;
@@ -19,7 +20,7 @@ template<int Nm>
 __device__ void Gauss_Jordan(float_type H[Nm][Nm], float_type g[Nm], float_type x[Nm]);
 
 template<int Nm>
-__global__ void update_weights(
+__global__ void update_weights_kernel(
     const float_type* __restrict__ vx,
     const float_type* __restrict__ vy,
     const int* __restrict__ d_cell_offsets,
@@ -38,20 +39,6 @@ __global__ void update_weights(
     float_type dt
 );
 
-void update_weights_dispatch(
-    const float_type* vx,
-    const float_type* vy,
-    const int* d_cell_offsets,
-    float_type* w,
-    float_type* wold,
-    float_type* NVR,
-    float_type* UxVR,
-    float_type* UyVR,
-    float_type* ExVR,
-    float_type* EyVR,
-    float_type* d_pt0,
-    float_type* d_pt1,
-    float_type* d_pt2,   
-    int num_cells,
-    int Nm
+void update_weights(
+    ParticleContainer &pc, FieldContainer &fc, Sorting &sorter
 );
