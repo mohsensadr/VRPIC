@@ -25,7 +25,7 @@ public:
 
     void kick_VR(FieldContainer &fc);
 
-    void update_position(float_type Lx, float_type Ly, float_type DT);
+    void update_position();
 
     void save_old_velocity();
 

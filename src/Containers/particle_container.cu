@@ -47,7 +47,7 @@ void ParticleContainer::kick_VR(FieldContainer &fc)
 }
 
 
-void ParticleContainer::update_position(float_type Lx, float_type Ly, float_type DT) {
+void ParticleContainer::update_position() {
     update_position_2d<<<blocksPerGrid, threadsPerBlock>>>(
         d_x, d_y, d_vx, d_vy, n_particles, Lx, Ly, DT
     );

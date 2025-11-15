@@ -100,8 +100,7 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
           update_weights(pc, fc, sorter);
         
         // push particles in the position space
-        pc.update_position(Lx, Ly, DT);
-        cudaDeviceSynchronize();
+        pc.update_position();
 
         // update moments
         if (depositionMode == DepositionMode::SORTING) {
