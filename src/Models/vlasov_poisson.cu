@@ -44,10 +44,7 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
     }
 
     // initialize particle velocity and position
-    initialize_particles<<<blocksPerGrid, threadsPerBlock>>>(
-        pc.d_x, pc.d_y, pc.d_vx, pc.d_vy, Lx, Ly, N_PARTICLES, pdf_position
-    );
-    cudaDeviceSynchronize();
+    initialize_particles(pc, pdf_position);
 
     // compute moments, needed to find emperical density field
     if (depositionMode == DepositionMode::SORTING) {

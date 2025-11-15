@@ -3,6 +3,9 @@
 
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
+#include "Containers/particle_container.cuh"
+#include "Containers/field_container.cuh"
+#include "Distributions/pdfs.cuh"
 
 /**
  * @brief Kernel to initialize particle positions and velocities using rejection sampling
@@ -19,7 +22,7 @@
  * @param pdf PDF functor to use for rejection sampling
  */
 template<typename PDF>
-__global__ void initialize_particles(float_type *x, float_type *y,
+__global__ void initialize_particles_kernel(float_type *x, float_type *y,
                                      float_type *vx, float_type *vy,
                                      float_type Lx, float_type Ly,
                                      int N, PDF pdf) {
@@ -57,6 +60,16 @@ __global__ void initialize_particles(float_type *x, float_type *y,
 
     vx[i] = curand_normal(&state);
     vy[i] = curand_normal(&state);
+}
+
+template<typename PDF>
+void initialize_particles(ParticleContainer &pc, PDF pdf) {
+
+    initialize_particles_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        pc.d_x, pc.d_y, pc.d_vx, pc.d_vy, Lx, Ly, N_PARTICLES, pdf
+    );
+    cudaDeviceSynchronize();
+
 }
 
 /**
