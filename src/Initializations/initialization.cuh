@@ -88,7 +88,7 @@ void initialize_particles(ParticleContainer &pc, PDF pdf) {
  * @param pdf PDF functor to use for target density
  */
 template<typename PDF>
-__global__ void initialize_weights(float_type *x, float_type *y, float_type *N, float_type *w,
+__global__ void initialize_weights_kernel(float_type *x, float_type *y, float_type *N, float_type *w,
                                    int Ntotal, int N_GRID_X, int N_GRID_Y,
                                    float_type Lx, float_type Ly, PDF pdf) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -106,6 +106,16 @@ __global__ void initialize_weights(float_type *x, float_type *y, float_type *N, 
     float_type Ntarget = pdf(x[i], y[i]) * dx * dy * Lx * Ly * Ntotal;
 
     w[i] = (Navg + Nemp - Ntarget) / Nemp;
+}
+
+template<typename PDF>
+void initialize_weights(ParticleContainer &pc, FieldContainer &fc, PDF pdf){
+
+    // set particle weights given estimted and exact fields
+    initialize_weights_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        pc.d_x, pc.d_y, fc.d_N, pc.d_w, N_PARTICLES, N_GRID_X, N_GRID_Y, Lx, Ly, pdf
+    );
+    cudaDeviceSynchronize();
 }
 
 #endif  // PARTICLE_INITIALIZER_H

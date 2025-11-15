@@ -54,10 +54,7 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
     cudaDeviceSynchronize();
 
     // set particle weights given estimted and exact fields
-    initialize_weights<<<blocksPerGrid, threadsPerBlock>>>(
-        pc.d_x, pc.d_y, fc.d_N, pc.d_w, N_PARTICLES, N_GRID_X, N_GRID_Y, Lx, Ly, pdf_position
-    );
-    cudaDeviceSynchronize();
+    initialize_weights(pc, fc, pdf_position);
 
     // recompute moments given weights, mainly for VR estimate
     if (depositionMode == DepositionMode::SORTING) {
