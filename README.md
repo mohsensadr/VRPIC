@@ -2,7 +2,7 @@
 
 # Vlasov-Poisson with Variance Reduction
 
-A CUDA/C++ implementation of the **particle--in-cell (PIC)** to the **Vlasov–Poisson equation** with **Variance Reduction (VRIPC)**. This project provides a high-performance GPU-accelerated framework for simulating plasma dynamics with reduced statistical noise, and enabling more accurate long-time evolution of distribution functions.
+A CUDA/C++ implementation of the **particle--in-cell (PIC)** to the **Vlasov–Poisson equation** with **Variance Reduction (VRPIC)**. This project provides a high-performance GPU-accelerated framework for simulating plasma dynamics with reduced statistical noise, and enabling more accurate long-time evolution of distribution functions.
 
 ---
 
@@ -41,13 +41,37 @@ mkdir bin && cd bin
 cmake ..
 make
 ```
+
+By default, cmake compile the code for A100 GPU. In casee of other architectures, provide cmake with the flag `CMAKE_CUDA_ARCHITECTURES`, for example
+```
+cmake .. -DCMAKE_CUDA_ARCHITECTURES=80
+```
+
 ### Execution
 
 The compiled executable can be run by
 ```
-./main N_GRID_X N_GRID_Y N_PARTICLES CFL NSteps Lx Ly threadsPerBlock deposition_mode VRMode RhsMode [pdf_type] [pdf_params...]
+./main N_GRID_X\
+       N_GRID_Y\
+       N_PARTICLES\
+       CFL\
+       NSteps\
+       Lx\
+       Ly\
+       threadsPerBlock\
+       deposition_mode\
+       VRMode\
+       RhsMode\
+       [pdf_type]\
+       [pdf_params...]
 ```
-where ```deposition_mode: brute | tiling | sorting``` and ```VRMode: basic | MXE```.
+where 
+
+```
+deposition_mode: brute | tiling | sorting
+VRMode: basic | MXE
+RhsMode: MC | VR
+```
 
 For example:
 
