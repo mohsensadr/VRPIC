@@ -2,13 +2,13 @@
 
 # Vlasov-Poisson with Variance Reduction
 
-A CUDA/C++ implementation of the **particle-based solution** to the **Vlasov–Poisson equation** with **Variance Reduction** using **importance sampling weights**. This project provides a high-performance GPU-accelerated framework for simulating plasma dynamics with reduced statistical noise, and enabling more accurate long-time evolution of distribution functions.
+A CUDA/C++ implementation of the **particle--in-cell (PIC)** to the **Vlasov–Poisson equation** with **Variance Reduction (VRIPC)**. This project provides a high-performance GPU-accelerated framework for simulating plasma dynamics with reduced statistical noise, and enabling more accurate long-time evolution of distribution functions.
 
 ---
 
 ## Overview
 
-The **Vlasov–Poisson equation** describes the evolution of a plasma or charged particle system under self-consistent electric fields. Traditional particle-in-cell (PIC) methods can suffer from high variance due to noise. The proposed method addresses this challenge by taking advantage of the correlation between the non-equilibrium and equilibrium simulations via  **importance weights**. For example, the number density profile for Landau Damping test case at the finite time can be estimated with a lower variance compared to standard MC.
+The **Vlasov–Poisson equation** describes the evolution of a plasma or charged particle system under self-consistent electric fields. Traditional particle-in-cell (PIC) methods can suffer from noise. The proposed method addresses this challenge by taking advantage of the correlation between the non-equilibrium and equilibrium simulations via  **importance weights**. For example, the density and temperature profiles for the Landau Damping test case at the finite time can be estimated with a lower variance compared to standard PIC.
 
 ![Demo](examples/LandauDamping.gif)
 
@@ -45,12 +45,12 @@ make
 
 The compiled executable can be run by
 ```
-./main N_GRID_X N_GRID_Y N_PARTICLES DT NSteps Lx Ly threadsPerBlock deposition_mode VRMode [pdf_type] [pdf_params...]
+./main N_GRID_X N_GRID_Y N_PARTICLES CFL NSteps Lx Ly threadsPerBlock deposition_mode VRMode RhsMode [pdf_type] [pdf_params...]
 ```
 where ```deposition_mode: brute | tiling | sorting``` and ```VRMode: basic | MXE```.
 
 For example:
 
-``` ./main 128 128 1000000 0.01 100 1.0 1.0 256 brute basic gaussian 0.5```
+``` ./main 100 100 1000000 0.1 200 12.5663706144 12.5663706144  256 sorting mxe vr cosine 0.05 0.5```
 
 For the command line of executioning different test cases, see the header in ```src/main.cpp```.
