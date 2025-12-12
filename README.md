@@ -2,7 +2,7 @@
 
 # Vlasov-Poisson with Variance Reduction
 
-A CUDA/C++ implementation of the **particle--in-cell (PIC)** to the **Vlasov–Poisson equation** with **Variance Reduction (VRPIC)**. This project provides a high-performance GPU-accelerated framework for simulating plasma dynamics with reduced statistical noise, and enabling more accurate long-time evolution of distribution functions.
+A CUDA/C++ implementation of the **particle-in-cell (PIC)** method of solving the **Vlasov–Poisson equation** equipped with the **Variance Reduction (VRPIC)**. This project provides a high-performance GPU-accelerated framework for simulating plasma dynamics with reduced statistical noise, and enabling more accurate long-time evolution of distribution functions.
 
 ---
 
