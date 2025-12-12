@@ -122,7 +122,7 @@ __global__ void update_weights_kernel(
     float_type Navg = float_type(n_particles) / float_type(num_cells);
     float_type Ux = UxVR[cell];
     float_type Uy = UyVR[cell];
-    float_type tol = Tolerance<float_type>::value();
+    float_type tol = 1e-6;
     int start = d_cell_offsets[cell];
     int end   = d_cell_offsets[cell + 1];
     int Npc = end - start;

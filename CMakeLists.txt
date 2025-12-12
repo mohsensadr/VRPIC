@@ -20,9 +20,12 @@ set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 # Set CUDA compute capability (adjust for your GPU)
 # e.g. -DCMAKE_CUDA_ARCHITECTURES=80 for A100
-if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-    set(CMAKE_CUDA_ARCHITECTURES 70)  # default fallback
+set(CMAKE_CUDA_ARCHITECTURES "" CACHE STRING "CUDA architectures" FORCE)
+
+if(NOT CMAKE_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES 80)
 endif()
+
 message(STATUS "CUDA architectures = ${CMAKE_CUDA_ARCHITECTURES}")
 
 # Precision type (default = float)
