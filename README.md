@@ -8,7 +8,7 @@ A CUDA/C++ implementation of the **particle-in-cell (PIC)** method of solving th
 
 ## Overview
 
-The **Vlasov–Poisson equation** describes the evolution of a plasma or charged particle system under self-consistent electric fields. Traditional particle-in-cell (PIC) methods can suffer from noise. The proposed method addresses this challenge by taking advantage of the correlation between the non-equilibrium and equilibrium simulations via  **importance weights**. For example, the density and temperature profiles for the Landau Damping test case at the finite time can be estimated with a lower variance compared to standard PIC.
+The **Vlasov–Poisson equation** describes the evolution of a charged particle system under self-consistent electric fields. Traditional particle-in-cell (PIC) methods suffer from inherent statistical noise when the signal is weak. The proposed method addresses this challenge by taking advantage of the correlation between the non-equilibrium and equilibrium simulations via  **importance weights**. For example, the density and temperature profiles for the Landau Damping test case at the finite time can be estimated with a lower variance compared to standard PIC.
 
 ![Demo](examples/LandauDamping.gif)
 
@@ -19,6 +19,7 @@ The **Vlasov–Poisson equation** describes the evolution of a plasma or charged
 - **Fully GPU-accelerated**: Uses CUDA to parallelize moment computation, particle updates, and field (Poisson) solver.
 - **Variance reduction (VR)**: Implements control variate methods to reduce noise in moment computations.
 - **Importance weighting**: Dynamically adjusts particle weights using local Maxwellian-Boltzmann distribution as control variate.
+- **Least biased moment conservation**: Deploys MxE formulation to ensure weight conservation during the kick process.
 - **Self-consistent field solving**: Solves the Poisson equation using FFT method.
 - **Post-processing output**: Dumps moment fields for visualization and diagnostics.
 
@@ -35,14 +36,14 @@ The **Vlasov–Poisson equation** describes the evolution of a plasma or charged
 ### Build
 
 ```bash
-git clone https://github.com/yourusername/vlasov-poisson.git
-cd vlasov-poisson
+git clone https://github.com/mohsensadr/VRPIC.git
+cd VRPIC
 mkdir bin && cd bin
 cmake ..
 make
 ```
 
-By default, cmake compile the code for A100 GPU. In casee of other architectures, provide cmake with the flag `CMAKE_CUDA_ARCHITECTURES`, for example
+By default, cmake compile the code for A100 GPU. In case of other architectures, provide cmake with the flag `CMAKE_CUDA_ARCHITECTURES`, for example
 ```
 cmake .. -DCMAKE_CUDA_ARCHITECTURES=80
 ```
