@@ -7,7 +7,7 @@
 #include <string>
 
 /**
- * Record the largest particle importance weight at the end of each time step.
+ * Record maximum particle-weight and MxE-iteration diagnostics each time step.
  *
  * The reduction is performed on the GPU.  Only the resulting scalar is copied
  * to the host, which keeps the diagnostic inexpensive for large particle sets.
@@ -21,6 +21,8 @@ public:
     MaximumWeightRecorder(const MaximumWeightRecorder&) = delete;
     MaximumWeightRecorder& operator=(const MaximumWeightRecorder&) = delete;
 
+    void begin_step();
+    int* device_max_mxe_iterations() { return device_max_mxe_iterations_; }
     void record(int step, float_type time, const float_type* device_weights);
 
 private:
@@ -28,5 +30,6 @@ private:
     void* device_temp_storage_ = nullptr;
     std::size_t temp_storage_bytes_ = 0;
     float_type* device_maximum_ = nullptr;
+    int* device_max_mxe_iterations_ = nullptr;
     std::ofstream output_;
 };

@@ -13,7 +13,7 @@
 #include "Models/vlasov_poisson.cuh"
 // Using simple CUDA-compatible PDF approach
 
-// ./main N_GRID_X N_GRID_Y N_PARTICLES CFL NSteps Lx Ly threadsPerBlock deposition_mode VRMode RhsMode [pdf_type] [pdf_params...]
+// ./main N_GRID_X N_GRID_Y N_PARTICLES CFL NSteps Lx Ly threadsPerBlock deposition_mode VRMode RhsMode [pdf_type] [pdf_params...] [--field-output on|off]
 // deposition_mode: brute | tiling | sorting
 // VRMode: basic | MXE
 // RhsMode: MC | VR
@@ -23,6 +23,8 @@
 // ./main 128 128 1000000 0.01 100 1.0 1.0 256 sorting basic MC double_gaussian 0.1 0.2 0.3 0.4 0.7 0.6 0.5 0.5
 
 int main(int argc, char** argv) {
+    bool field_output_enabled = true;
+
     if (argc > 1) N_GRID_X = std::atoi(argv[1]);
     if (argc > 2) N_GRID_Y = std::atoi(argv[2]);
     if (argc > 3) N_PARTICLES = std::atoi(argv[3]);
@@ -99,9 +101,35 @@ int main(int argc, char** argv) {
     if (argc > 12) {
         pdf_type = argv[12];
         
-        // Parse PDF parameters
+        // Parse PDF parameters and optional output controls. The field-output
+        // option may be placed after the PDF parameters.
+        int parameter_index = 0;
         for (int i = 13; i < argc; ++i) {
-            pdf_params[i-13] = std::atof(argv[i]);
+            const std::string argument(argv[i]);
+            if (argument == "--field-output") {
+                if (++i >= argc) {
+                    std::cerr << "--field-output requires 'on' or 'off'\n";
+                    return -1;
+                }
+                std::string value(argv[i]);
+                std::transform(value.begin(), value.end(), value.begin(), ::tolower);
+                if (value == "on") {
+                    field_output_enabled = true;
+                } else if (value == "off") {
+                    field_output_enabled = false;
+                } else {
+                    std::cerr << "Invalid --field-output value: " << value
+                              << "\nValid options: on | off\n";
+                    return -1;
+                }
+                continue;
+            }
+
+            if (parameter_index >= 8) {
+                std::cerr << "Too many PDF parameters\n";
+                return -1;
+            }
+            pdf_params[parameter_index++] = std::atof(argv[i]);
         }
     }
 
@@ -135,6 +163,7 @@ int main(int argc, char** argv) {
         case RhsMode::VR:  std::cout << "VR\n"; break;
     }
     std::cout << "PDF Type: " << pdf_type << "\n";
+    std::cout << "Field output: " << (field_output_enabled ? "ON" : "OFF") << "\n";
     std::cout << "PDF Parameters: ";
     for (float_type param : pdf_params) {
         std::cout << param << " ";
@@ -145,7 +174,7 @@ int main(int argc, char** argv) {
 
     try {
         // Run simulation with specified PDF
-        run(pdf_type, pdf_params);
+        run(pdf_type, pdf_params, field_output_enabled);
         
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";

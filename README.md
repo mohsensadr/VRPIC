@@ -25,7 +25,7 @@ The **Vlasov–Poisson equation** describes the evolution of a charged particle 
 - **Least biased moment conservation**: Deploys MxE formulation to ensure weight conservation during the kick process.
 - **Self-consistent field solving**: Solves the Poisson equation using FFT method.
 - **Post-processing output**: Dumps moment fields for visualization and diagnostics.
-- **Weight diagnostic**: Records `step,time,max_weight` in `data/max_weight.csv` at the end of every time step.
+- **Weight diagnostic**: Records `step,time,max_weight,max_mxe_iterations` in `data/max_weight.csv` at the end of every time step.
 
 ---
 
@@ -68,7 +68,8 @@ The compiled executable can be run by
        VRMode\
        RhsMode\
        [pdf_type]\
-       [pdf_params...]
+       [pdf_params...]\
+       [--field-output on|off]
 ```
 where 
 
@@ -82,9 +83,36 @@ For example:
 
 ``` ./main 100 100 1000000 0.1 200 12.5663706144 12.5663706144  256 sorting mxe vr cosine 0.05 0.5```
 
+Field CSV output is enabled by default. For long simulations, disable the large
+initial and periodic field dumps by placing this option after the PDF parameters:
+
+```bash
+./main 100 100 1000000 0.1 10000 12.5663706144 12.5663706144 256 sorting mxe vr cosine 0.05 0.5 --field-output off
+```
+
+This option does not disable `data/max_weight.csv`; the initial maximum weight
+at step 0 and the maximum weight/maximum MxE iterations after every time step
+continue to be recorded. Use
+`--field-output on` to enable field output explicitly.
+
 Each run replaces `data/max_weight.csv`. Preserve or rename this file between
 Landau-damping runs with different cosine amplitudes. Its time column uses the
 simulation time `step * DT`, so runs can be compared directly even when their
 time-step sizes differ.
+
+To compare runs stored as `bin/data_alpha_<value>/max_weight.csv`, install
+Matplotlib and generate the
+maximum-weight and MxE-iteration figures with:
+
+```bash
+python3 examples/plot_landau_weight_diagnostics.py
+```
+
+The script writes single-column (3.5-inch-wide), publication-ready PDF and
+600-DPI PNG files to `bin/figures`.
+Maximum weight is plotted as $\|w(t)\|_\infty$ on a logarithmic vertical axis.
+Both figures use distinct line styles and staggered markers spaced every 10,000
+steps. MxE iterations use a logarithmic axis by default; use
+`--iteration-scale linear` if a linear MxE iteration axis is preferred.
 
 For the command line of executioning different test cases, see the header in ```src/main.cpp```.

@@ -33,7 +33,7 @@ MaximumWeightRecorder::MaximumWeightRecorder(int particle_count,
     if (!output_) {
         throw std::runtime_error("Could not open maximum-weight output file: " + filename);
     }
-    output_ << "step,time,max_weight\n";
+    output_ << "step,time,max_weight,max_mxe_iterations\n";
     output_ << std::setprecision(17);
 
     check_cuda(cudaMalloc(&device_maximum_, sizeof(float_type)),
@@ -44,11 +44,19 @@ MaximumWeightRecorder::MaximumWeightRecorder(int particle_count,
                "sizing maximum-weight reduction workspace");
     check_cuda(cudaMalloc(&device_temp_storage_, temp_storage_bytes_),
                "allocating maximum-weight reduction workspace");
+    check_cuda(cudaMalloc(&device_max_mxe_iterations_, sizeof(int)),
+               "allocating MxE iteration diagnostic");
 }
 
 MaximumWeightRecorder::~MaximumWeightRecorder() {
     cudaFree(device_temp_storage_);
     cudaFree(device_maximum_);
+    cudaFree(device_max_mxe_iterations_);
+}
+
+void MaximumWeightRecorder::begin_step() {
+    check_cuda(cudaMemset(device_max_mxe_iterations_, 0, sizeof(int)),
+               "resetting MxE iteration diagnostic");
 }
 
 void MaximumWeightRecorder::record(int step, float_type time,
@@ -62,7 +70,13 @@ void MaximumWeightRecorder::record(int step, float_type time,
                           cudaMemcpyDeviceToHost),
                "copying maximum particle weight");
 
-    output_ << step << ',' << time << ',' << maximum << '\n';
+    int maximum_mxe_iterations;
+    check_cuda(cudaMemcpy(&maximum_mxe_iterations, device_max_mxe_iterations_,
+                          sizeof(int), cudaMemcpyDeviceToHost),
+               "copying maximum MxE iteration count");
+
+    output_ << step << ',' << time << ',' << maximum << ','
+            << maximum_mxe_iterations << '\n';
     output_.flush();
     if (!output_) {
         throw std::runtime_error("Failed while writing maximum-weight diagnostic");
