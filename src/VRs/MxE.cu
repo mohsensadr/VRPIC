@@ -114,7 +114,8 @@ __global__ void update_weights_kernel(
     int num_cells,
     int n_particles,
     float_type dt,
-    float_type q_m
+    float_type q_m,
+    int* max_iterations
 ) {
     int cell = blockIdx.x * blockDim.x + threadIdx.x;
     if (cell >= num_cells) return;
@@ -178,9 +179,8 @@ __global__ void update_weights_kernel(
     float_type g[Nm], H[Nm][Nm], xvec[Nm], lam[Nm] = {0.0};
 
     float_type res;
-    while (!convergence) {
+    while (!convergence && iter < max_iter) {
         iter++;
-        if (iter > max_iter) break;
 
         // Compute gradient
         res = 0.0;
@@ -255,18 +255,20 @@ __global__ void update_weights_kernel(
         w[i] = wold[i];
       }
     }
-    if(iter > 999){
+    atomicMax(max_iterations, iter);
+    if(iter >= max_iter && !convergence){
       printf("iter: %d res: %e\n", iter, res);
       printf("MxE iter %d in cell %d\n", iter, cell);
     }
 }
 
 void update_weights(
-    ParticleContainer &pc, FieldContainer &fc, Sorting &sorter
+    ParticleContainer &pc, FieldContainer &fc, Sorting &sorter,
+    int* max_iterations
 ) {
     switch (Nm) {
         case 3:
-            update_weights_kernel<3><<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, sorter.d_cell_offsets, pc.d_w, pc.d_wold, fc.d_NVR, fc.d_UxVR, fc.d_UyVR, fc.d_ExVR, fc.d_EyVR, fc.d_pt0, fc.d_pt1, fc.d_pt2, grid_size, N_PARTICLES, DT, QP/MP);
+            update_weights_kernel<3><<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, sorter.d_cell_offsets, pc.d_w, pc.d_wold, fc.d_NVR, fc.d_UxVR, fc.d_UyVR, fc.d_ExVR, fc.d_EyVR, fc.d_pt0, fc.d_pt1, fc.d_pt2, grid_size, N_PARTICLES, DT, QP/MP, max_iterations);
             break;
         // Add more cases as needed
         default:

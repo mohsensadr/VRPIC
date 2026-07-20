@@ -36,9 +36,12 @@ __global__ void update_weights_kernel(
     float_type* __restrict__ d_pt2,   
     int num_cells,
     int n_particles,
-    float_type dt
+    float_type dt,
+    float_type q_m,
+    int* max_iterations
 );
 
 void update_weights(
-    ParticleContainer &pc, FieldContainer &fc, Sorting &sorter
+    ParticleContainer &pc, FieldContainer &fc, Sorting &sorter,
+    int* max_iterations
 );

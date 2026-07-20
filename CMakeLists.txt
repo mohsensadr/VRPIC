@@ -46,6 +46,7 @@ set(SOURCES
     ${SRC_DIR}/Models/vlasov_poisson.cu
     ${SRC_DIR}/Sorters/sorting.cu
     ${SRC_DIR}/IOs/IO.cpp
+    ${SRC_DIR}/IOs/MaximumWeightRecorder.cu
     ${SRC_DIR}/VRs/MxE.cu
     ${SRC_DIR}/Depositors/BruteDepositor.cu
     ${SRC_DIR}/Depositors/TiledDepositor.cu

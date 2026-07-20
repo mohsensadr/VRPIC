@@ -4,4 +4,5 @@
 #include <string>
 #include <vector>
 
-void run(const std::string& pdf_type, float_type *pdf_params);
+void run(const std::string& pdf_type, float_type* pdf_params,
+         bool field_output_enabled);

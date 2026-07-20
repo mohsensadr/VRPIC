@@ -8,6 +8,7 @@
 #include "Solvers/solver.cuh"
 #include "Initializations/initialization.cuh"
 #include "IOs/IO.h"
+#include "IOs/MaximumWeightRecorder.cuh"
 #include "Depositors/moments.cuh"
 #include "Containers/particle_container.cuh"
 #include "Containers/field_container.cuh"
@@ -15,7 +16,8 @@
 #include "Sorters/sorting.cuh"
 #include "VRs/MxE.cuh"
 
-void run(const std::string& pdf_type, float_type* pdf_params) {
+void run(const std::string& pdf_type, float_type* pdf_params,
+         bool field_output_enabled) {
     cudaMemcpyToSymbol(kb, &kb_host, sizeof(float_type));
     cudaMemcpyToSymbol(m, &m_host, sizeof(float_type));
 
@@ -62,12 +64,20 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
     // compute Electric field
     solve_poisson_periodic(fc);
 
-    // write out initial fields
-    post_proc(fc, 0);
+    // Field dumps can be disabled for long runs. Scalar diagnostics remain on.
+    if (field_output_enabled)
+        post_proc(fc, 0);
 
     size_t size = N_PARTICLES * sizeof(float_type);
+    MaximumWeightRecorder maximum_weight_recorder(N_PARTICLES);
+
+    // Preserve the true initial maximum for subsequent relative diagnostics.
+    maximum_weight_recorder.begin_step();
+    maximum_weight_recorder.record(0, 0.0, pc.d_w);
 
     for (int step = 1; step < NSteps+1; ++step) {
+        maximum_weight_recorder.begin_step();
+
         // compute Electric field
         solve_poisson_periodic(fc);
 
@@ -90,7 +100,8 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
 
         // MxE to conserve equil. moments.
         if (vrMode == VRMode::MXE)
-            update_weights(pc, fc, sorter);
+            update_weights(pc, fc, sorter,
+                           maximum_weight_recorder.device_max_mxe_iterations());
         
         // push particles in the position space
         pc.update_position();
@@ -101,11 +112,13 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
 
         compute_moments(pc, fc, sorter);
 
+        // Record the global importance weights after the complete time step.
+        maximum_weight_recorder.record(step, step * DT, pc.d_w);
+
         // print output
-        if (step % 10 == 0)
+        if (field_output_enabled && step % 10 == 0)
             post_proc(fc, step);
     }
 
     std::cout << "Done.\n";
 }
-
