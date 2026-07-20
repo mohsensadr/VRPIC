@@ -25,6 +25,7 @@ The **Vlasov–Poisson equation** describes the evolution of a charged particle 
 - **Least biased moment conservation**: Deploys MxE formulation to ensure weight conservation during the kick process.
 - **Self-consistent field solving**: Solves the Poisson equation using FFT method.
 - **Post-processing output**: Dumps moment fields for visualization and diagnostics.
+- **Weight diagnostic**: Records `step,time,max_weight` in `data/max_weight.csv` at the end of every time step.
 
 ---
 
@@ -80,5 +81,10 @@ RhsMode: MC | VR
 For example:
 
 ``` ./main 100 100 1000000 0.1 200 12.5663706144 12.5663706144  256 sorting mxe vr cosine 0.05 0.5```
+
+Each run replaces `data/max_weight.csv`. Preserve or rename this file between
+Landau-damping runs with different cosine amplitudes. Its time column uses the
+simulation time `step * DT`, so runs can be compared directly even when their
+time-step sizes differ.
 
 For the command line of executioning different test cases, see the header in ```src/main.cpp```.

@@ -8,6 +8,7 @@
 #include "Solvers/solver.cuh"
 #include "Initializations/initialization.cuh"
 #include "IOs/IO.h"
+#include "IOs/MaximumWeightRecorder.cuh"
 #include "Depositors/moments.cuh"
 #include "Containers/particle_container.cuh"
 #include "Containers/field_container.cuh"
@@ -66,6 +67,7 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
     post_proc(fc, 0);
 
     size_t size = N_PARTICLES * sizeof(float_type);
+    MaximumWeightRecorder maximum_weight_recorder(N_PARTICLES);
 
     for (int step = 1; step < NSteps+1; ++step) {
         // compute Electric field
@@ -101,6 +103,9 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
 
         compute_moments(pc, fc, sorter);
 
+        // Record the global importance weights after the complete time step.
+        maximum_weight_recorder.record(step, step * DT, pc.d_w);
+
         // print output
         if (step % 10 == 0)
             post_proc(fc, step);
@@ -108,4 +113,3 @@ void run(const std::string& pdf_type, float_type* pdf_params) {
 
     std::cout << "Done.\n";
 }
-
