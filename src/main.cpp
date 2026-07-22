@@ -190,8 +190,14 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    // Make sure GPU has finished all work before stopping timer
-    cudaDeviceSynchronize();
+    // Make sure GPU has finished all work before stopping the timer.  Do not
+    // publish performance data for a run whose asynchronous GPU work failed.
+    const cudaError_t synchronization_status = cudaDeviceSynchronize();
+    if (synchronization_status != cudaSuccess) {
+        std::cerr << "CUDA synchronization failed: "
+                  << cudaGetErrorString(synchronization_status) << '\n';
+        return -1;
+    }
 
     const double execution_time_seconds = std::chrono::duration<double>(
         std::chrono::steady_clock::now() - start_time).count();
@@ -199,9 +205,12 @@ int main(int argc, char** argv) {
     write_performance_metrics(execution_time_seconds,
                               peak_device_memory_bytes);
 
+    const double peak_device_memory_mb =
+        static_cast<double>(peak_device_memory_bytes) / 1'000'000.0;
+
     std::cout << "Execution time: " << execution_time_seconds << " seconds\n"
-              << "Peak tracked GPU memory: " << peak_device_memory_bytes
-              << " bytes\n"
+              << "Peak tracked GPU memory: " << peak_device_memory_mb
+              << " MB\n"
               << "Performance metrics: data/performance_metrics.csv"
               << std::endl;
 
