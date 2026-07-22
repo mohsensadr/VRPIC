@@ -98,9 +98,9 @@ continue to be recorded. Use
 At the end of every successful run, VRPIC also replaces
 `data/performance_metrics.csv`. The file records the particles per cell, total
 particle count, wall-clock execution time, peak tracked GPU allocation in MB,
-and the same memory value in bytes. The GPU-memory value covers every direct
-VRPIC CUDA allocation, including transient sorting, Poisson, and reduction
-workspaces. It intentionally excludes CUDA-context and cuFFT-internal memory.
+and covers every direct VRPIC CUDA allocation, including transient sorting,
+Poisson, and reduction workspaces. It intentionally excludes CUDA-context and
+cuFFT-internal memory.
 
 Each run replaces `data/max_weight.csv`. Preserve or rename this file between
 Landau-damping runs with different cosine amplitudes. Its time column uses the

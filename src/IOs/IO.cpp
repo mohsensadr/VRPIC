@@ -80,11 +80,9 @@ void write_performance_metrics(double execution_time_seconds,
     const double particles_per_cell =
         static_cast<double>(N_PARTICLES) / static_cast<double>(grid_size);
 
-    output << "particles_per_cell,total_particles,execution_time_s,memory_mb,"
-              "peak_gpu_memory_bytes\n";
+    output << "particles_per_cell,total_particles,execution_time_s,memory_mb\n";
     output << std::setprecision(17) << particles_per_cell << ',' << N_PARTICLES
-           << ',' << execution_time_seconds << ',' << memory_mb << ','
-           << peak_device_memory_bytes << '\n';
+           << ',' << execution_time_seconds << ',' << memory_mb << '\n';
     if (!output) {
         throw std::runtime_error("Failed while writing performance metrics: " +
                                  filename.string());
