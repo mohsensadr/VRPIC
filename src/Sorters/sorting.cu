@@ -36,12 +36,12 @@ __global__ void histogram_kernel(
 
 __global__ void scatter_particles_kernel(
     const float_type* x, const float_type* y,
-    const float_type* vx, const float_type* vy, const float_type* w, const float_type* wold,
+    const float_type* vx, const float_type* vy, const float_type* w,
     const int* cell_idx,
     const int* cell_offsets,
     int* cell_counters,
     float_type* x_sorted, float_type* y_sorted,
-    float_type* vx_sorted, float_type* vy_sorted, float_type* w_sorted, float_type* wold_sorted,
+    float_type* vx_sorted, float_type* vy_sorted, float_type* w_sorted,
     int n_particles
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -55,8 +55,6 @@ __global__ void scatter_particles_kernel(
     vy_sorted[dst] = vy[i];
     if (w != nullptr)
         w_sorted[dst] = w[i];
-    if (wold != nullptr)
-        wold_sorted[dst] = wold[i];
 }
 
 // ---------------------------------------------------------------------------
@@ -93,8 +91,6 @@ Sorting::Sorting(ParticleContainer& pc_, FieldContainer& fc_)
     tracked_cuda_malloc(&d_vy_sorted, np * sizeof(float_type));
     if (pc->d_w != nullptr)
         tracked_cuda_malloc(&d_w_sorted, np * sizeof(float_type));
-    if (pc->d_wold != nullptr)
-        tracked_cuda_malloc(&d_wold_sorted, np * sizeof(float_type));
 }
 
 Sorting::~Sorting() {
@@ -108,7 +104,6 @@ Sorting::~Sorting() {
     tracked_cuda_free(d_vx_sorted);
     tracked_cuda_free(d_vy_sorted);
     tracked_cuda_free(d_w_sorted);
-    tracked_cuda_free(d_wold_sorted);
 }
 
 // ---------------------------------------------------------------------------
@@ -158,12 +153,12 @@ void Sorting::sort_particles_by_cell(cudaStream_t stream) {
 
     // 6) scatter particles into sorted arrays
     scatter_particles_kernel<<<blocks_p, TPB, 0, stream>>>(
-        pc->d_x, pc->d_y, pc->d_vx, pc->d_vy, pc->d_w, pc->d_wold,
+        pc->d_x, pc->d_y, pc->d_vx, pc->d_vy, pc->d_w,
         d_cell_idx,
         d_cell_offsets,
         d_cell_counters,
         d_x_sorted, d_y_sorted,
-        d_vx_sorted, d_vy_sorted, d_w_sorted, d_wold_sorted,
+        d_vx_sorted, d_vy_sorted, d_w_sorted,
         n_particles
     );
 
@@ -174,8 +169,6 @@ void Sorting::sort_particles_by_cell(cudaStream_t stream) {
     cudaMemcpyAsync(pc->d_vy, d_vy_sorted, n_particles * sizeof(float_type), cudaMemcpyDeviceToDevice, stream);
     if (pc->d_w != nullptr)
         cudaMemcpyAsync(pc->d_w, d_w_sorted, n_particles * sizeof(float_type), cudaMemcpyDeviceToDevice, stream);
-    if (pc->d_wold != nullptr)
-        cudaMemcpyAsync(pc->d_wold, d_wold_sorted, n_particles * sizeof(float_type), cudaMemcpyDeviceToDevice, stream);
 
     // ensure work completed
     cudaStreamSynchronize(stream);

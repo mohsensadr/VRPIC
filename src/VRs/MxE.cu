@@ -182,13 +182,31 @@ __global__ void update_weights_kernel(
     while (!convergence && iter < max_iter) {
         iter++;
 
-        // Compute gradient
+        // Compute the gradient and the symmetric Hessian moments in one
+        // particle traversal. The previous implementation traversed each
+        // cell three times for the gradient and six more times for the
+        // Hessian even though all nine reductions use the same particles.
         res = 0.0;
-        for (int j = 0; j < Nm; j++) {
-            g[j] = 0.0;
-            for (int i = start; i < end; i++)
-                g[j] += w[i] * mom<Nm>(vx[i], vy[i], Ux, Uy, j);
-            g[j] = g[j]/Npc - p[j];
+        float_type weighted_moments[Nm] = {0.0};
+        float_type weighted_products[Nm][Nm] = {0.0};
+        for (int i = start; i < end; ++i) {
+            float_type particle_moments[Nm];
+            for (int j = 0; j < Nm; ++j) {
+                particle_moments[j] = mom<Nm>(vx[i], vy[i], Ux, Uy, j);
+                weighted_moments[j] += w[i] * particle_moments[j];
+            }
+            for (int k = 0; k < Nm; ++k) {
+                for (int j = k; j < Nm; ++j) {
+                    // Preserve the original multiplication order to avoid
+                    // introducing extra floating-point roundoff.
+                    weighted_products[k][j] +=
+                        particle_moments[k] * particle_moments[j] * w[i];
+                }
+            }
+        }
+
+        for (int j = 0; j < Nm; ++j) {
+            g[j] = weighted_moments[j] / Npc - p[j];
             res += fabs(g[j]);
         }
         
@@ -197,22 +215,12 @@ __global__ void update_weights_kernel(
           break;
         }
 
-        // Compute Hessian
-        for (int i = 0; i < Nm; i++)
-            for (int j = 0; j < Nm; j++)
-                H[i][j] = 0.0;
-
-        for (int k = 0; k < Nm; k++) {
-            for (int j = k; j < Nm; j++) {
-                float_type Ski = 0.0, Sji = 0.0, SkiSji = 0.0;
-                for (int i = start; i < end; i++) {
-                    float_type mk = mom<Nm>(vx[i], vy[i], Ux, Uy, k);
-                    float_type mj = mom<Nm>(vx[i], vy[i], Ux, Uy, j);
-                    Ski += mk * w[i];
-                    Sji += mj * w[i];
-                    SkiSji += mk * mj * w[i];
-                }
-                H[k][j] = SkiSji/Npc - Ski/Npc*p[j] - Sji/Npc*p[k] + p[j]*p[k];
+        for (int k = 0; k < Nm; ++k) {
+            for (int j = k; j < Nm; ++j) {
+                H[k][j] = weighted_products[k][j] / Npc
+                        - weighted_moments[k] / Npc * p[j]
+                        - weighted_moments[j] / Npc * p[k]
+                        + p[j] * p[k];
             }
         }
 
@@ -268,7 +276,9 @@ void update_weights(
 ) {
     switch (Nm) {
         case 3:
-            update_weights_kernel<3><<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, sorter.d_cell_offsets, pc.d_w, pc.d_wold, fc.d_NVR, fc.d_UxVR, fc.d_UyVR, fc.d_ExVR, fc.d_EyVR, fc.d_pt0, fc.d_pt1, fc.d_pt2, grid_size, N_PARTICLES, DT, QP/MP, max_iterations);
+            // The sorted-weight buffer is an exact copy of d_w after the
+            // preceding sort and doubles as MxE's old/baseline workspace.
+            update_weights_kernel<3><<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, sorter.d_cell_offsets, pc.d_w, sorter.d_w_sorted, fc.d_NVR, fc.d_UxVR, fc.d_UyVR, fc.d_ExVR, fc.d_EyVR, fc.d_pt0, fc.d_pt1, fc.d_pt2, grid_size, N_PARTICLES, DT, QP/MP, max_iterations);
             break;
         // Add more cases as needed
         default:

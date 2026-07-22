@@ -4,8 +4,7 @@
 #include <cmath>
 #include "Diagnostics/gpu_memory_tracker.hpp"
 
-ParticleContainer::ParticleContainer(int n_particles_, bool enable_vr,
-                                     bool enable_mxe)
+ParticleContainer::ParticleContainer(int n_particles_, bool enable_vr)
     : n_particles(n_particles_) {
     size_t bytes = n_particles * sizeof(float_type);
     tracked_cuda_malloc(&d_x, bytes);
@@ -14,8 +13,6 @@ ParticleContainer::ParticleContainer(int n_particles_, bool enable_vr,
     tracked_cuda_malloc(&d_vy, bytes);
     if (enable_vr)
         tracked_cuda_malloc(&d_w, bytes);
-    if (enable_mxe)
-        tracked_cuda_malloc(&d_wold, bytes);
     qp = QP;
     mp = MP;
 }
@@ -26,7 +23,6 @@ ParticleContainer::~ParticleContainer() {
     tracked_cuda_free(d_vx);
     tracked_cuda_free(d_vy);
     tracked_cuda_free(d_w);
-    tracked_cuda_free(d_wold);
 }
 
 __device__ int periodic_index(int i, int N) {

@@ -13,12 +13,11 @@ public:
     float_type *d_vx_old = nullptr;
     float_type *d_vy_old = nullptr;
     float_type *d_w = nullptr;
-    float_type *d_wold = nullptr;
     float_type qp;
     float_type mp;
     int n_particles;
 
-    ParticleContainer(int n_particles_, bool enable_vr, bool enable_mxe);
+    ParticleContainer(int n_particles_, bool enable_vr);
     ~ParticleContainer();
 
     void kick(FieldContainer &fc);

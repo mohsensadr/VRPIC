@@ -32,7 +32,7 @@ void run(const std::string& pdf_type, float_type* pdf_params,
     const bool mxe_enabled = vrMode == VRMode::MXE;
     const bool vr_enabled = rhsMode == RhsMode::VR || mxe_enabled;
 
-    ParticleContainer pc(N_PARTICLES, vr_enabled, mxe_enabled);
+    ParticleContainer pc(N_PARTICLES, vr_enabled);
     FieldContainer fc(N_GRID_X, N_GRID_Y, Lx, Ly, vr_enabled, mxe_enabled);
     Sorting sorter(pc, fc);
 
@@ -72,7 +72,6 @@ void run(const std::string& pdf_type, float_type* pdf_params,
     if (field_output_enabled)
         post_proc(fc, 0);
 
-    const size_t size = N_PARTICLES * sizeof(float_type);
     std::unique_ptr<MaximumWeightRecorder> maximum_weight_recorder;
     if (vr_enabled) {
         maximum_weight_recorder =
@@ -90,10 +89,6 @@ void run(const std::string& pdf_type, float_type* pdf_params,
         solve_poisson_periodic(fc);
 
         if (vr_enabled) {
-            if (mxe_enabled) {
-                cudaMemcpy(pc.d_wold, pc.d_w, size, cudaMemcpyDeviceToDevice);
-                cudaDeviceSynchronize();
-            }
             // Map weights from global to local equilibrium.
             pc.map_weights(fc, true);
         }

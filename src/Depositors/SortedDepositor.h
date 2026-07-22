@@ -69,7 +69,8 @@ __global__ void deposit_pt_2d_sorted(
     const float_type* __restrict__ UxVR,
     const float_type* __restrict__ UyVR,
     const int*   __restrict__ d_cell_offsets,
-    float_type* d_pt,
-    int j,
+    float_type* d_pt0,
+    float_type* d_pt1,
+    float_type* d_pt2,
     int num_cells
 );
