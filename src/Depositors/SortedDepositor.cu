@@ -13,23 +13,27 @@ void SortedDepositor::deposit(ParticleContainer& pc, FieldContainer& fc, Sorting
     deposit_temperature_2d_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, sorter.d_cell_offsets, fc.d_Ux, fc.d_Uy, fc.d_T, num_cells);
     cudaDeviceSynchronize();
 
-    deposit_density_2d_VR_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_w, sorter.d_cell_offsets, fc.d_NVR, num_cells, n_particles);
-    cudaDeviceSynchronize();
+    if (fc.vr_enabled) {
+        deposit_density_2d_VR_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_w, sorter.d_cell_offsets, fc.d_NVR, num_cells, n_particles);
+        cudaDeviceSynchronize();
 
-    deposit_velocity_2d_VR_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, pc.d_w, sorter.d_cell_offsets, fc.d_NVR, fc.d_UxVR, fc.d_UyVR, num_cells);
-    cudaDeviceSynchronize();
+        deposit_velocity_2d_VR_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, pc.d_w, sorter.d_cell_offsets, fc.d_NVR, fc.d_UxVR, fc.d_UyVR, num_cells);
+        cudaDeviceSynchronize();
 
-    deposit_temperature_2d_VR_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, pc.d_w, fc.d_UxVR, fc.d_UyVR, sorter.d_cell_offsets, fc.d_NVR, fc.d_TVR, num_cells);
-    cudaDeviceSynchronize();
+        deposit_temperature_2d_VR_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, pc.d_w, fc.d_UxVR, fc.d_UyVR, sorter.d_cell_offsets, fc.d_NVR, fc.d_TVR, num_cells);
+        cudaDeviceSynchronize();
+    }
 
-    deposit_pt_2d_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, pc.d_w, fc.d_UxVR, fc.d_UyVR, sorter.d_cell_offsets, fc.d_pt0, 0, num_cells);
-    cudaDeviceSynchronize();
+    if (fc.mxe_enabled) {
+        deposit_pt_2d_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, pc.d_w, fc.d_UxVR, fc.d_UyVR, sorter.d_cell_offsets, fc.d_pt0, 0, num_cells);
+        cudaDeviceSynchronize();
 
-    deposit_pt_2d_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, pc.d_w, fc.d_UxVR, fc.d_UyVR, sorter.d_cell_offsets, fc.d_pt1, 1, num_cells);
-    cudaDeviceSynchronize();
+        deposit_pt_2d_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, pc.d_w, fc.d_UxVR, fc.d_UyVR, sorter.d_cell_offsets, fc.d_pt1, 1, num_cells);
+        cudaDeviceSynchronize();
 
-    deposit_pt_2d_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, pc.d_w, fc.d_UxVR, fc.d_UyVR, sorter.d_cell_offsets, fc.d_pt2, 2, num_cells);
-    cudaDeviceSynchronize();
+        deposit_pt_2d_sorted<<<blocksPerGrid, threadsPerBlock>>>(pc.d_vx, pc.d_vy, pc.d_w, fc.d_UxVR, fc.d_UyVR, sorter.d_cell_offsets, fc.d_pt2, 2, num_cells);
+        cudaDeviceSynchronize();
+    }
 }
 
 __global__ void deposit_density_2d_sorted(

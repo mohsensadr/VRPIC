@@ -4,14 +4,18 @@
 #include <cmath>
 #include "Diagnostics/gpu_memory_tracker.hpp"
 
-ParticleContainer::ParticleContainer(int n_particles_) : n_particles(n_particles_) {
+ParticleContainer::ParticleContainer(int n_particles_, bool enable_vr,
+                                     bool enable_mxe)
+    : n_particles(n_particles_) {
     size_t bytes = n_particles * sizeof(float_type);
     tracked_cuda_malloc(&d_x, bytes);
     tracked_cuda_malloc(&d_y, bytes);
     tracked_cuda_malloc(&d_vx, bytes);
     tracked_cuda_malloc(&d_vy, bytes);
-    tracked_cuda_malloc(&d_w, bytes);
-    tracked_cuda_malloc(&d_wold, bytes);
+    if (enable_vr)
+        tracked_cuda_malloc(&d_w, bytes);
+    if (enable_mxe)
+        tracked_cuda_malloc(&d_wold, bytes);
     qp = QP;
     mp = MP;
 }

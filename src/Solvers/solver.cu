@@ -302,26 +302,28 @@ void solve_poisson_periodic(FieldContainer& fc) {
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
 
-    // --------------------------
-    // 2. Variance-Reduced estimate
-    // --------------------------
-    compute_rhs_kernel<<<gridDim, blockDim>>>(fc.d_NVR, d_rhs, N_GRID_X, N_GRID_Y, dx, dy, QP, N_PARTICLES, Lx, Ly);
-    CUDA_CHECK(cudaGetLastError());
-    CUDA_CHECK(cudaDeviceSynchronize());
+    if (fc.vr_enabled) {
+        // --------------------------
+        // 2. Variance-Reduced estimate
+        // --------------------------
+        compute_rhs_kernel<<<gridDim, blockDim>>>(fc.d_NVR, d_rhs, N_GRID_X, N_GRID_Y, dx, dy, QP, N_PARTICLES, Lx, Ly);
+        CUDA_CHECK(cudaGetLastError());
+        CUDA_CHECK(cudaDeviceSynchronize());
 
-    res_normalizer = compute_l2_norm(d_rhs, size);
+        res_normalizer = compute_l2_norm(d_rhs, size);
 
-    poisson_fft_solver(N_GRID_X, N_GRID_Y, fc.dx, fc.dy, d_rhs, fc.d_phiVR);
+        poisson_fft_solver(N_GRID_X, N_GRID_Y, fc.dx, fc.dy, d_rhs, fc.d_phiVR);
 
-    compute_residual_kernel<<<gridDim, blockDim>>>(fc.d_phiVR, d_rhs, d_residual, N_GRID_X, N_GRID_Y, dx, dy);
-    CUDA_CHECK(cudaGetLastError());
-    CUDA_CHECK(cudaDeviceSynchronize());
+        compute_residual_kernel<<<gridDim, blockDim>>>(fc.d_phiVR, d_rhs, d_residual, N_GRID_X, N_GRID_Y, dx, dy);
+        CUDA_CHECK(cudaGetLastError());
+        CUDA_CHECK(cudaDeviceSynchronize());
 
-    res_norm = compute_l2_norm(d_residual, size) / res_normalizer;
+        res_norm = compute_l2_norm(d_residual, size) / res_normalizer;
 
-    compute_electric_field_kernel_periodic<<<gridDim, blockDim>>>(fc.d_phiVR, fc.d_ExVR, fc.d_EyVR, N_GRID_X, N_GRID_Y, dx, dy);
-    CUDA_CHECK(cudaGetLastError());
-    CUDA_CHECK(cudaDeviceSynchronize());
+        compute_electric_field_kernel_periodic<<<gridDim, blockDim>>>(fc.d_phiVR, fc.d_ExVR, fc.d_EyVR, N_GRID_X, N_GRID_Y, dx, dy);
+        CUDA_CHECK(cudaGetLastError());
+        CUDA_CHECK(cudaDeviceSynchronize());
+    }
 
     // Cleanup
     tracked_cuda_free(d_residual);

@@ -18,7 +18,7 @@ public:
     float_type mp;
     int n_particles;
 
-    ParticleContainer(int n_particles_);
+    ParticleContainer(int n_particles_, bool enable_vr, bool enable_mxe);
     ~ParticleContainer();
 
     void kick(FieldContainer &fc);

@@ -12,14 +12,16 @@ void BruteDepositor::deposit(ParticleContainer& pc, FieldContainer& fc, Sorting&
     deposit_temperature_2d(pc.d_x, pc.d_y, fc.d_N, pc.d_vx, pc.d_vy, fc.d_Ux, fc.d_Uy, fc.d_T, n_particles, N_GRID_X, N_GRID_Y, Lx, Ly);
     cudaDeviceSynchronize();
 
-    deposit_density_2d_VR(pc.d_x, pc.d_y, pc.d_w, fc.d_NVR, n_particles, N_GRID_X, N_GRID_Y, Lx, Ly);
-    cudaDeviceSynchronize();
+    if (fc.vr_enabled) {
+        deposit_density_2d_VR(pc.d_x, pc.d_y, pc.d_w, fc.d_NVR, n_particles, N_GRID_X, N_GRID_Y, Lx, Ly);
+        cudaDeviceSynchronize();
 
-    deposit_velocity_2d_VR(pc.d_x, pc.d_y, pc.d_vx, pc.d_vy, pc.d_w, fc.d_UxVR, fc.d_UyVR, fc.d_NVR, n_particles, N_GRID_X, N_GRID_Y, Lx, Ly);
-    cudaDeviceSynchronize();
+        deposit_velocity_2d_VR(pc.d_x, pc.d_y, pc.d_vx, pc.d_vy, pc.d_w, fc.d_UxVR, fc.d_UyVR, fc.d_NVR, n_particles, N_GRID_X, N_GRID_Y, Lx, Ly);
+        cudaDeviceSynchronize();
 
-    deposit_temperature_2d_VR(pc.d_x, pc.d_y, pc.d_vx, pc.d_vy, pc.d_w, fc.d_N, fc.d_NVR, fc.d_UxVR, fc.d_UyVR, fc.d_TVR, n_particles, N_GRID_X, N_GRID_Y, Lx, Ly);
-    cudaDeviceSynchronize();
+        deposit_temperature_2d_VR(pc.d_x, pc.d_y, pc.d_vx, pc.d_vy, pc.d_w, fc.d_N, fc.d_NVR, fc.d_UxVR, fc.d_UyVR, fc.d_TVR, n_particles, N_GRID_X, N_GRID_Y, Lx, Ly);
+        cudaDeviceSynchronize();
+    }
 }
 
 __global__ void deposit_density_2d(float_type *x, float_type *y, float_type *N, int n_particles,

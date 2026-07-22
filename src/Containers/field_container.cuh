@@ -34,8 +34,13 @@ public:
     float_type xmin, ymin;
     int nx, ny;
     size_t grid_size;
+    bool vr_enabled;
+    bool mxe_enabled;
 
-    FieldContainer(int N_GRID_X, int N_GRID_Y, float_type Lx, float_type Ly) : nx(N_GRID_X), ny(N_GRID_Y) {
+    FieldContainer(int N_GRID_X, int N_GRID_Y, float_type Lx, float_type Ly,
+                   bool enable_vr, bool enable_mxe)
+        : nx(N_GRID_X), ny(N_GRID_Y), vr_enabled(enable_vr),
+          mxe_enabled(enable_mxe) {
         grid_size = nx * ny;
         xmin = 0.0;
         ymin = 0.0;
@@ -51,17 +56,21 @@ public:
         tracked_cuda_malloc(&d_Ex, bytes);
         tracked_cuda_malloc(&d_Ey, bytes);
 
-        tracked_cuda_malloc(&d_NVR, bytes);
-        tracked_cuda_malloc(&d_UxVR, bytes);
-        tracked_cuda_malloc(&d_UyVR, bytes);
-        tracked_cuda_malloc(&d_TVR, bytes);
-        tracked_cuda_malloc(&d_phiVR, bytes);
-        tracked_cuda_malloc(&d_ExVR, bytes);
-        tracked_cuda_malloc(&d_EyVR, bytes);
+        if (vr_enabled) {
+            tracked_cuda_malloc(&d_NVR, bytes);
+            tracked_cuda_malloc(&d_UxVR, bytes);
+            tracked_cuda_malloc(&d_UyVR, bytes);
+            tracked_cuda_malloc(&d_TVR, bytes);
+            tracked_cuda_malloc(&d_phiVR, bytes);
+            tracked_cuda_malloc(&d_ExVR, bytes);
+            tracked_cuda_malloc(&d_EyVR, bytes);
+        }
 
-        tracked_cuda_malloc(&d_pt0, bytes);
-        tracked_cuda_malloc(&d_pt1, bytes);
-        tracked_cuda_malloc(&d_pt2, bytes);
+        if (mxe_enabled) {
+            tracked_cuda_malloc(&d_pt0, bytes);
+            tracked_cuda_malloc(&d_pt1, bytes);
+            tracked_cuda_malloc(&d_pt2, bytes);
+        }
     }
 
     ~FieldContainer() {
@@ -94,13 +103,17 @@ public:
         cudaMemset(d_Uy, 0, bytes);
         cudaMemset(d_T, 0, bytes);
 
-        cudaMemset(d_NVR, 0, bytes);
-        cudaMemset(d_UxVR, 0, bytes);
-        cudaMemset(d_UyVR, 0, bytes);
-        cudaMemset(d_TVR, 0, bytes);
-      
-        cudaMemset(d_pt0, 0, bytes);
-        cudaMemset(d_pt1, 0, bytes);
-        cudaMemset(d_pt2, 0, bytes);
+        if (vr_enabled) {
+            cudaMemset(d_NVR, 0, bytes);
+            cudaMemset(d_UxVR, 0, bytes);
+            cudaMemset(d_UyVR, 0, bytes);
+            cudaMemset(d_TVR, 0, bytes);
+        }
+
+        if (mxe_enabled) {
+            cudaMemset(d_pt0, 0, bytes);
+            cudaMemset(d_pt1, 0, bytes);
+            cudaMemset(d_pt2, 0, bytes);
+        }
     }
 };

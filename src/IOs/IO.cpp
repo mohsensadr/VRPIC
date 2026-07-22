@@ -50,16 +50,18 @@ void post_proc(FieldContainer &fc, int step){
     dump(fc.d_Ux, "Ux");
     dump(fc.d_Uy, "Uy");
     dump(fc.d_T, "T");
-    dump(fc.d_NVR, "NVR");
-    dump(fc.d_UxVR, "UxVR");
-    dump(fc.d_UyVR, "UyVR");
-    dump(fc.d_TVR, "TVR");
     dump(fc.d_phi, "phi");
     dump(fc.d_Ex, "Ex");
     dump(fc.d_Ey, "Ey");
-    dump(fc.d_phiVR, "phiVR");
-    dump(fc.d_ExVR, "ExVR");
-    dump(fc.d_EyVR, "EyVR");
+    if (fc.vr_enabled) {
+        dump(fc.d_NVR, "NVR");
+        dump(fc.d_UxVR, "UxVR");
+        dump(fc.d_UyVR, "UyVR");
+        dump(fc.d_TVR, "TVR");
+        dump(fc.d_phiVR, "phiVR");
+        dump(fc.d_ExVR, "ExVR");
+        dump(fc.d_EyVR, "EyVR");
+    }
 
     std::cout << "Wrote postproc in step: " << step << std::endl;
     cudaDeviceSynchronize();
