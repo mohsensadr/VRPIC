@@ -2,6 +2,7 @@
 #include "sorting.cuh"
 #include <cstdio>
 #include <cub/cub.cuh> // CUB for DeviceScan::ExclusiveSum
+#include "Diagnostics/gpu_memory_tracker.hpp"
 
 // kernels --------------------------------------------------------------------
 
@@ -78,32 +79,32 @@ Sorting::Sorting(ParticleContainer& pc_, FieldContainer& fc_)
     size_t nc = (size_t)nx * (size_t)ny;
 
     // allocate per-particle and per-cell arrays
-    cudaMalloc(&d_cell_idx,    np * sizeof(int));
-    cudaMalloc(&d_cell_counts, nc * sizeof(int));
-    cudaMalloc(&d_cell_offsets, (nc+1) * sizeof(int));
-    cudaMalloc(&d_cell_counters,nc * sizeof(int));
+    tracked_cuda_malloc(&d_cell_idx,    np * sizeof(int));
+    tracked_cuda_malloc(&d_cell_counts, nc * sizeof(int));
+    tracked_cuda_malloc(&d_cell_offsets, (nc+1) * sizeof(int));
+    tracked_cuda_malloc(&d_cell_counters,nc * sizeof(int));
 
     // allocate sorted arrays (same size as particle arrays)
-    cudaMalloc(&d_x_sorted,  np * sizeof(float_type));
-    cudaMalloc(&d_y_sorted,  np * sizeof(float_type));
-    cudaMalloc(&d_vx_sorted, np * sizeof(float_type));
-    cudaMalloc(&d_vy_sorted, np * sizeof(float_type));
-    cudaMalloc(&d_w_sorted,  np * sizeof(float_type));
-    cudaMalloc(&d_wold_sorted,  np * sizeof(float_type));
+    tracked_cuda_malloc(&d_x_sorted,  np * sizeof(float_type));
+    tracked_cuda_malloc(&d_y_sorted,  np * sizeof(float_type));
+    tracked_cuda_malloc(&d_vx_sorted, np * sizeof(float_type));
+    tracked_cuda_malloc(&d_vy_sorted, np * sizeof(float_type));
+    tracked_cuda_malloc(&d_w_sorted,  np * sizeof(float_type));
+    tracked_cuda_malloc(&d_wold_sorted,  np * sizeof(float_type));
 }
 
 Sorting::~Sorting() {
-    cudaFree(d_cell_idx);
-    cudaFree(d_cell_counts);
-    cudaFree(d_cell_offsets);
-    cudaFree(d_cell_counters);
+    tracked_cuda_free(d_cell_idx);
+    tracked_cuda_free(d_cell_counts);
+    tracked_cuda_free(d_cell_offsets);
+    tracked_cuda_free(d_cell_counters);
 
-    cudaFree(d_x_sorted);
-    cudaFree(d_y_sorted);
-    cudaFree(d_vx_sorted);
-    cudaFree(d_vy_sorted);
-    cudaFree(d_w_sorted);
-    cudaFree(d_wold_sorted);
+    tracked_cuda_free(d_x_sorted);
+    tracked_cuda_free(d_y_sorted);
+    tracked_cuda_free(d_vx_sorted);
+    tracked_cuda_free(d_vy_sorted);
+    tracked_cuda_free(d_w_sorted);
+    tracked_cuda_free(d_wold_sorted);
 }
 
 // ---------------------------------------------------------------------------
@@ -141,10 +142,10 @@ void Sorting::sort_particles_by_cell(cudaStream_t stream) {
     size_t temp_storage_bytes = 0;
     // determine temporary storage size
     cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_cell_counts, d_cell_offsets, num_cells);
-    cudaMalloc(&d_temp_storage, temp_storage_bytes);
+    tracked_cuda_malloc(&d_temp_storage, temp_storage_bytes);
     // run scan
     cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_cell_counts, d_cell_offsets, num_cells);
-    cudaFree(d_temp_storage);
+    tracked_cuda_free(d_temp_storage);
 
     cudaMemcpy(d_cell_offsets + num_cells, &n_particles, sizeof(int), cudaMemcpyHostToDevice);
 

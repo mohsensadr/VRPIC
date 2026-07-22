@@ -2,26 +2,27 @@
 #include "particle_container.cuh"
 #include "field_container.cuh"
 #include <cmath>
+#include "Diagnostics/gpu_memory_tracker.hpp"
 
 ParticleContainer::ParticleContainer(int n_particles_) : n_particles(n_particles_) {
     size_t bytes = n_particles * sizeof(float_type);
-    cudaMalloc(&d_x, bytes);
-    cudaMalloc(&d_y, bytes);
-    cudaMalloc(&d_vx, bytes);
-    cudaMalloc(&d_vy, bytes);
-    cudaMalloc(&d_w, bytes);
-    cudaMalloc(&d_wold, bytes);
+    tracked_cuda_malloc(&d_x, bytes);
+    tracked_cuda_malloc(&d_y, bytes);
+    tracked_cuda_malloc(&d_vx, bytes);
+    tracked_cuda_malloc(&d_vy, bytes);
+    tracked_cuda_malloc(&d_w, bytes);
+    tracked_cuda_malloc(&d_wold, bytes);
     qp = QP;
     mp = MP;
 }
 
 ParticleContainer::~ParticleContainer() {
-    cudaFree(d_x);
-    cudaFree(d_y);
-    cudaFree(d_vx);
-    cudaFree(d_vy);
-    cudaFree(d_w);
-    cudaFree(d_wold);
+    tracked_cuda_free(d_x);
+    tracked_cuda_free(d_y);
+    tracked_cuda_free(d_vx);
+    tracked_cuda_free(d_vy);
+    tracked_cuda_free(d_w);
+    tracked_cuda_free(d_wold);
 }
 
 __device__ int periodic_index(int i, int N) {

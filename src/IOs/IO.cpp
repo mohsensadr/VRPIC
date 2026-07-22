@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <iomanip>
+#include <sstream>
 
 #include "IOs/IO.h"
 #include "Constants/constants.hpp"
@@ -61,4 +63,30 @@ void post_proc(FieldContainer &fc, int step){
 
     std::cout << "Wrote postproc in step: " << step << std::endl;
     cudaDeviceSynchronize();
+}
+
+void write_performance_metrics(double execution_time_seconds,
+                               std::size_t peak_device_memory_bytes) {
+    fs::create_directories("data");
+    const fs::path filename = fs::path("data") / "performance_metrics.csv";
+    std::ofstream output(filename);
+    if (!output) {
+        throw std::runtime_error("Could not open performance metrics file: " +
+                                 filename.string());
+    }
+
+    const double memory_mib =
+        static_cast<double>(peak_device_memory_bytes) / (1024.0 * 1024.0);
+    const double particles_per_cell =
+        static_cast<double>(N_PARTICLES) / static_cast<double>(grid_size);
+
+    output << "particles_per_cell,total_particles,execution_time_s,memory_mib,"
+              "peak_gpu_memory_bytes\n";
+    output << std::setprecision(17) << particles_per_cell << ',' << N_PARTICLES
+           << ',' << execution_time_seconds << ',' << memory_mib << ','
+           << peak_device_memory_bytes << '\n';
+    if (!output) {
+        throw std::runtime_error("Failed while writing performance metrics: " +
+                                 filename.string());
+    }
 }

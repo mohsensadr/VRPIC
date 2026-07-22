@@ -8,8 +8,11 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <chrono>
 
 #include "Constants/constants.hpp"
+#include "Diagnostics/gpu_memory_tracker.hpp"
+#include "IOs/IO.h"
 #include "Models/vlasov_poisson.cuh"
 // Using simple CUDA-compatible PDF approach
 
@@ -170,7 +173,8 @@ int main(int argc, char** argv) {
     }
     std::cout << "\n";
 
-    auto start_time = std::chrono::high_resolution_clock::now();
+    reset_gpu_memory_tracker();
+    const auto start_time = std::chrono::steady_clock::now();
 
     try {
         // Run simulation with specified PDF
@@ -189,9 +193,17 @@ int main(int argc, char** argv) {
     // Make sure GPU has finished all work before stopping timer
     cudaDeviceSynchronize();
 
-    std::cout << "Execution time: "
-          << std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start_time).count()
-          << " seconds" << std::endl;
+    const double execution_time_seconds = std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - start_time).count();
+    const std::size_t peak_device_memory_bytes = peak_gpu_memory_bytes();
+    write_performance_metrics(execution_time_seconds,
+                              peak_device_memory_bytes);
+
+    std::cout << "Execution time: " << execution_time_seconds << " seconds\n"
+              << "Peak tracked GPU memory: " << peak_device_memory_bytes
+              << " bytes\n"
+              << "Performance metrics: data/performance_metrics.csv"
+              << std::endl;
 
     return 0;
 }

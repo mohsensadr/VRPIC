@@ -3,6 +3,7 @@
 #include <cuda_runtime.h>
 #include <stdexcept>
 #include "Constants/constants.hpp"
+#include "Diagnostics/gpu_memory_tracker.hpp"
 
 #define TILE_X 16
 #define TILE_Y 16
@@ -42,47 +43,47 @@ public:
         dy = Ly / ny;
         size_t bytes = grid_size * sizeof(float_type);
 
-        cudaMalloc(&d_N, bytes);
-        cudaMalloc(&d_Ux, bytes);
-        cudaMalloc(&d_Uy, bytes);
-        cudaMalloc(&d_T, bytes);
-        cudaMalloc(&d_phi, bytes);
-        cudaMalloc(&d_Ex, bytes);
-        cudaMalloc(&d_Ey, bytes);
+        tracked_cuda_malloc(&d_N, bytes);
+        tracked_cuda_malloc(&d_Ux, bytes);
+        tracked_cuda_malloc(&d_Uy, bytes);
+        tracked_cuda_malloc(&d_T, bytes);
+        tracked_cuda_malloc(&d_phi, bytes);
+        tracked_cuda_malloc(&d_Ex, bytes);
+        tracked_cuda_malloc(&d_Ey, bytes);
 
-        cudaMalloc(&d_NVR, bytes);
-        cudaMalloc(&d_UxVR, bytes);
-        cudaMalloc(&d_UyVR, bytes);
-        cudaMalloc(&d_TVR, bytes);
-        cudaMalloc(&d_phiVR, bytes);
-        cudaMalloc(&d_ExVR, bytes);
-        cudaMalloc(&d_EyVR, bytes);
+        tracked_cuda_malloc(&d_NVR, bytes);
+        tracked_cuda_malloc(&d_UxVR, bytes);
+        tracked_cuda_malloc(&d_UyVR, bytes);
+        tracked_cuda_malloc(&d_TVR, bytes);
+        tracked_cuda_malloc(&d_phiVR, bytes);
+        tracked_cuda_malloc(&d_ExVR, bytes);
+        tracked_cuda_malloc(&d_EyVR, bytes);
 
-        cudaMalloc(&d_pt0, bytes);
-        cudaMalloc(&d_pt1, bytes);
-        cudaMalloc(&d_pt2, bytes);
+        tracked_cuda_malloc(&d_pt0, bytes);
+        tracked_cuda_malloc(&d_pt1, bytes);
+        tracked_cuda_malloc(&d_pt2, bytes);
     }
 
     ~FieldContainer() {
-        cudaFree(d_N);
-        cudaFree(d_Ux);
-        cudaFree(d_Uy);
-        cudaFree(d_T);
-        cudaFree(d_phi);
-        cudaFree(d_Ex);
-        cudaFree(d_Ey);
+        tracked_cuda_free(d_N);
+        tracked_cuda_free(d_Ux);
+        tracked_cuda_free(d_Uy);
+        tracked_cuda_free(d_T);
+        tracked_cuda_free(d_phi);
+        tracked_cuda_free(d_Ex);
+        tracked_cuda_free(d_Ey);
 
-        cudaFree(d_NVR);
-        cudaFree(d_UxVR);
-        cudaFree(d_UyVR);
-        cudaFree(d_TVR);
-        cudaFree(d_phiVR);
-        cudaFree(d_ExVR);
-        cudaFree(d_EyVR);
+        tracked_cuda_free(d_NVR);
+        tracked_cuda_free(d_UxVR);
+        tracked_cuda_free(d_UyVR);
+        tracked_cuda_free(d_TVR);
+        tracked_cuda_free(d_phiVR);
+        tracked_cuda_free(d_ExVR);
+        tracked_cuda_free(d_EyVR);
 
-        cudaFree(d_pt0);
-        cudaFree(d_pt1);
-        cudaFree(d_pt2);
+        tracked_cuda_free(d_pt0);
+        tracked_cuda_free(d_pt1);
+        tracked_cuda_free(d_pt2);
     }
 
     // Optional: zero out all field arrays

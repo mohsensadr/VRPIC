@@ -95,6 +95,24 @@ at step 0 and the maximum weight/maximum MxE iterations after every time step
 continue to be recorded. Use
 `--field-output on` to enable field output explicitly.
 
+At the end of every successful run, VRPIC also replaces
+`data/performance_metrics.csv`. The file records the particles per cell, total
+particle count, wall-clock execution time, peak tracked GPU allocation in MiB,
+and the same memory value in bytes. The GPU-memory value covers every direct
+VRPIC CUDA allocation, including transient sorting, Poisson, and reduction
+workspaces. It intentionally excludes CUDA-context and cuFFT-internal memory.
+
+After preserving the three run directories as `bin/data_1e2`, `bin/data_1e3`,
+and `bin/data_1e4`, generate charge-density accuracy-versus-cost figures with:
+
+```bash
+python3 examples/plot_vrpic_charge_error_cost.py
+```
+
+The plotting script reads `performance_metrics.csv` from each directory
+automatically. Explicit `--metrics`, `--execution-times`, and
+`--memory-footprints` options remain available for older runs.
+
 Each run replaces `data/max_weight.csv`. Preserve or rename this file between
 Landau-damping runs with different cosine amplitudes. Its time column uses the
 simulation time `step * DT`, so runs can be compared directly even when their

@@ -40,6 +40,7 @@ set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
 set(SOURCES
     ${SRC_DIR}/main.cpp
     ${SRC_DIR}/Constants/constants.cpp
+    ${SRC_DIR}/Diagnostics/gpu_memory_tracker.cpp
     ${SRC_DIR}/Containers/particle_container.cu
     ${SRC_DIR}/Solvers/solver.cu
     ${SRC_DIR}/Depositors/moments.cu
