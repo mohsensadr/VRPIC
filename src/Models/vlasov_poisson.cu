@@ -2,6 +2,7 @@
 #include <fstream>
 #include <cmath>
 #include <cstdlib>
+#include <memory>
 #include <cuda_runtime.h>
 
 #include "Constants/constants.hpp"
@@ -28,8 +29,11 @@ void run(const std::string& pdf_type, float_type* pdf_params,
     QP = Lx*Ly/N_PARTICLES;
     MP = 1.0;
 
-    ParticleContainer pc(N_PARTICLES);
-    FieldContainer fc(N_GRID_X, N_GRID_Y, Lx, Ly);
+    const bool mxe_enabled = vrMode == VRMode::MXE;
+    const bool vr_enabled = rhsMode == RhsMode::VR || mxe_enabled;
+
+    ParticleContainer pc(N_PARTICLES, vr_enabled);
+    FieldContainer fc(N_GRID_X, N_GRID_Y, Lx, Ly, vr_enabled, mxe_enabled);
     Sorting sorter(pc, fc);
 
     // Create the appropriate PDF struct for device use
@@ -53,13 +57,13 @@ void run(const std::string& pdf_type, float_type* pdf_params,
         sorter.sort_particles_by_cell();
     compute_moments(pc, fc, sorter);
 
-    // set particle weights given estimted and exact fields
-    initialize_weights(pc, fc, pdf_position);
-
-    // recompute moments given weights, mainly for VR estimate
-    if (depositionMode == DepositionMode::SORTING)
-        sorter.sort_particles_by_cell();
-    compute_moments(pc, fc, sorter);
+    if (vr_enabled) {
+        // Set particle weights and recompute the variance-reduced moments.
+        initialize_weights(pc, fc, pdf_position);
+        if (depositionMode == DepositionMode::SORTING)
+            sorter.sort_particles_by_cell();
+        compute_moments(pc, fc, sorter);
+    }
 
     // compute Electric field
     solve_poisson_periodic(fc);
@@ -68,25 +72,26 @@ void run(const std::string& pdf_type, float_type* pdf_params,
     if (field_output_enabled)
         post_proc(fc, 0);
 
-    size_t size = N_PARTICLES * sizeof(float_type);
-    MaximumWeightRecorder maximum_weight_recorder(N_PARTICLES);
-
-    // Preserve the true initial maximum for subsequent relative diagnostics.
-    maximum_weight_recorder.begin_step();
-    maximum_weight_recorder.record(0, 0.0, pc.d_w);
+    std::unique_ptr<MaximumWeightRecorder> maximum_weight_recorder;
+    if (vr_enabled) {
+        maximum_weight_recorder =
+            std::make_unique<MaximumWeightRecorder>(N_PARTICLES);
+        // Preserve the true initial maximum for subsequent diagnostics.
+        maximum_weight_recorder->begin_step();
+        maximum_weight_recorder->record(0, 0.0, pc.d_w);
+    }
 
     for (int step = 1; step < NSteps+1; ++step) {
-        maximum_weight_recorder.begin_step();
+        if (vr_enabled)
+            maximum_weight_recorder->begin_step();
 
         // compute Electric field
         solve_poisson_periodic(fc);
 
-        // update wold given w
-        cudaMemcpy(pc.d_wold, pc.d_w, size, cudaMemcpyDeviceToDevice);
-        cudaDeviceSynchronize();
-
-        // map weights from global to local eq.
-        pc.map_weights(fc, true);
+        if (vr_enabled) {
+            // Map weights from global to local equilibrium.
+            pc.map_weights(fc, true);
+        }
 
         // Push particles in the velocity space
         // Use either MC or VR density estimtes in the rhs of the Poisson to get E
@@ -95,13 +100,13 @@ void run(const std::string& pdf_type, float_type* pdf_params,
         else
             pc.kick(fc);
 
-        // map weights from local to global eq.
-        pc.map_weights(fc, false);
+        if (vr_enabled)
+            pc.map_weights(fc, false);
 
         // MxE to conserve equil. moments.
-        if (vrMode == VRMode::MXE)
+        if (mxe_enabled)
             update_weights(pc, fc, sorter,
-                           maximum_weight_recorder.device_max_mxe_iterations());
+                           maximum_weight_recorder->device_max_mxe_iterations());
         
         // push particles in the position space
         pc.update_position();
@@ -112,8 +117,10 @@ void run(const std::string& pdf_type, float_type* pdf_params,
 
         compute_moments(pc, fc, sorter);
 
-        // Record the global importance weights after the complete time step.
-        maximum_weight_recorder.record(step, step * DT, pc.d_w);
+        if (vr_enabled) {
+            // Record global importance weights after the complete time step.
+            maximum_weight_recorder->record(step, step * DT, pc.d_w);
+        }
 
         // print output
         if (field_output_enabled && step % 10 == 0)

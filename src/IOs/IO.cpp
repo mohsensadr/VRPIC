@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <iomanip>
+#include <sstream>
 
 #include "IOs/IO.h"
 #include "Constants/constants.hpp"
@@ -48,17 +50,43 @@ void post_proc(FieldContainer &fc, int step){
     dump(fc.d_Ux, "Ux");
     dump(fc.d_Uy, "Uy");
     dump(fc.d_T, "T");
-    dump(fc.d_NVR, "NVR");
-    dump(fc.d_UxVR, "UxVR");
-    dump(fc.d_UyVR, "UyVR");
-    dump(fc.d_TVR, "TVR");
     dump(fc.d_phi, "phi");
     dump(fc.d_Ex, "Ex");
     dump(fc.d_Ey, "Ey");
-    dump(fc.d_phiVR, "phiVR");
-    dump(fc.d_ExVR, "ExVR");
-    dump(fc.d_EyVR, "EyVR");
+    if (fc.vr_enabled) {
+        dump(fc.d_NVR, "NVR");
+        dump(fc.d_UxVR, "UxVR");
+        dump(fc.d_UyVR, "UyVR");
+        dump(fc.d_TVR, "TVR");
+        dump(fc.d_phiVR, "phiVR");
+        dump(fc.d_ExVR, "ExVR");
+        dump(fc.d_EyVR, "EyVR");
+    }
 
     std::cout << "Wrote postproc in step: " << step << std::endl;
     cudaDeviceSynchronize();
+}
+
+void write_performance_metrics(double execution_time_seconds,
+                               std::size_t peak_device_memory_bytes) {
+    fs::create_directories("data");
+    const fs::path filename = fs::path("data") / "performance_metrics.csv";
+    std::ofstream output(filename);
+    if (!output) {
+        throw std::runtime_error("Could not open performance metrics file: " +
+                                 filename.string());
+    }
+
+    const double memory_mb =
+        static_cast<double>(peak_device_memory_bytes) / 1'000'000.0;
+    const double particles_per_cell =
+        static_cast<double>(N_PARTICLES) / static_cast<double>(grid_size);
+
+    output << "particles_per_cell,total_particles,execution_time_s,memory_mb\n";
+    output << std::setprecision(17) << particles_per_cell << ',' << N_PARTICLES
+           << ',' << execution_time_seconds << ',' << memory_mb << '\n';
+    if (!output) {
+        throw std::runtime_error("Failed while writing performance metrics: " +
+                                 filename.string());
+    }
 }

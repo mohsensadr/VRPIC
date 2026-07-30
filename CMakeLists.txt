@@ -40,6 +40,7 @@ set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
 set(SOURCES
     ${SRC_DIR}/main.cpp
     ${SRC_DIR}/Constants/constants.cpp
+    ${SRC_DIR}/Diagnostics/gpu_memory_tracker.cpp
     ${SRC_DIR}/Containers/particle_container.cu
     ${SRC_DIR}/Solvers/solver.cu
     ${SRC_DIR}/Depositors/moments.cu
@@ -67,6 +68,14 @@ target_compile_definitions(main PRIVATE FLOAT_TYPE=${FLOAT_TYPE})
 
 # Link against cuFFT
 target_link_libraries(main PRIVATE cufft)
+
+# GCC 8 provides C++17 std::filesystem in a separate library.  GCC 9 and
+# newer include it in libstdc++, so only add the compatibility library when
+# it is required.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND
+   CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
+    target_link_libraries(main PRIVATE stdc++fs)
+endif()
 
 # Optional: output directory
 set_target_properties(main PROPERTIES

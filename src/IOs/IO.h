@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IO.h"
+#include <cstddef>
 #include <cstdio>
 #include <string>
 #include <Containers/field_container.cuh>
@@ -33,3 +33,7 @@ void write_output(int step, float_type* x, std::string s);
  * @param step The current simulation step number.
  */
 void post_proc(FieldContainer& fc, int step);
+
+/** Write end-of-run timing and tracked GPU-memory metrics to data/. */
+void write_performance_metrics(double execution_time_seconds,
+                               std::size_t peak_device_memory_bytes);

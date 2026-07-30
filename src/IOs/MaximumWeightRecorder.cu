@@ -4,6 +4,7 @@
 #include <cuda_runtime.h>
 
 #include <filesystem>
+#include "Diagnostics/gpu_memory_tracker.hpp"
 #include <iomanip>
 #include <stdexcept>
 
@@ -36,22 +37,22 @@ MaximumWeightRecorder::MaximumWeightRecorder(int particle_count,
     output_ << "step,time,max_weight,max_mxe_iterations\n";
     output_ << std::setprecision(17);
 
-    check_cuda(cudaMalloc(&device_maximum_, sizeof(float_type)),
+    check_cuda(tracked_cuda_malloc(&device_maximum_, sizeof(float_type)),
                "allocating maximum-weight result");
     check_cuda(cub::DeviceReduce::Max(nullptr, temp_storage_bytes_,
                                      static_cast<const float_type*>(nullptr),
                                      device_maximum_, particle_count_),
                "sizing maximum-weight reduction workspace");
-    check_cuda(cudaMalloc(&device_temp_storage_, temp_storage_bytes_),
+    check_cuda(tracked_cuda_malloc(&device_temp_storage_, temp_storage_bytes_),
                "allocating maximum-weight reduction workspace");
-    check_cuda(cudaMalloc(&device_max_mxe_iterations_, sizeof(int)),
+    check_cuda(tracked_cuda_malloc(&device_max_mxe_iterations_, sizeof(int)),
                "allocating MxE iteration diagnostic");
 }
 
 MaximumWeightRecorder::~MaximumWeightRecorder() {
-    cudaFree(device_temp_storage_);
-    cudaFree(device_maximum_);
-    cudaFree(device_max_mxe_iterations_);
+    tracked_cuda_free(device_temp_storage_);
+    tracked_cuda_free(device_maximum_);
+    tracked_cuda_free(device_max_mxe_iterations_);
 }
 
 void MaximumWeightRecorder::begin_step() {

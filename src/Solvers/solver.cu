@@ -1,4 +1,5 @@
 #include <cuda_runtime.h>
+#include "Diagnostics/gpu_memory_tracker.hpp"
 #include <math.h>
 #include <cufft.h>
 
@@ -147,7 +148,7 @@ __global__ void l2_reduce_kernel(const real_t* vec, real_t* block_sums, int N) {
 real_t compute_l2_norm(const real_t* d_vec, int N, int threads=256) {
     int blocks = (N + threads*2 - 1) / (threads*2);
     real_t* d_block_sums;
-    CUDA_CHECK(cudaMalloc(&d_block_sums, blocks * sizeof(real_t)));
+    CUDA_CHECK(tracked_cuda_malloc(&d_block_sums, blocks * sizeof(real_t)));
 
     l2_reduce_kernel<<<blocks, threads, threads*sizeof(real_t)>>>(d_vec, d_block_sums, N);
     CUDA_CHECK(cudaGetLastError());
@@ -160,7 +161,7 @@ real_t compute_l2_norm(const real_t* d_vec, int N, int threads=256) {
     for (int i=0; i<blocks; i++) sum += h_block_sums[i];
 
     delete[] h_block_sums;
-    cudaFree(d_block_sums);
+    tracked_cuda_free(d_block_sums);
 
     return std::sqrt(sum);
 }
@@ -181,8 +182,8 @@ void poisson_fft_solver(int NX, int NY, float_type dx, float_type dy,
     int nComplex = NY * (NX/2 + 1);
     complex_t* d_rhs_hat;
     complex_t* d_phi_hat;
-    CUDA_CHECK(cudaMalloc(&d_rhs_hat, sizeof(complex_t)*nComplex));
-    CUDA_CHECK(cudaMalloc(&d_phi_hat, sizeof(complex_t)*nComplex));
+    CUDA_CHECK(tracked_cuda_malloc(&d_rhs_hat, sizeof(complex_t)*nComplex));
+    CUDA_CHECK(tracked_cuda_malloc(&d_phi_hat, sizeof(complex_t)*nComplex));
 
     // Forward FFT
     CUFFT_CHECK(traits::exec_forward(planR2C, (real_t*)d_rhs, d_rhs_hat));
@@ -202,8 +203,8 @@ void poisson_fft_solver(int NX, int NY, float_type dx, float_type dy,
 
     cufftDestroy(planR2C);
     cufftDestroy(planC2R);
-    cudaFree(d_rhs_hat);
-    cudaFree(d_phi_hat);
+    tracked_cuda_free(d_rhs_hat);
+    tracked_cuda_free(d_phi_hat);
 }
 
 static __device__ int periodic_index(int i, int N) {
@@ -273,8 +274,8 @@ void solve_poisson_periodic(FieldContainer& fc) {
     int size = N_GRID_X * N_GRID_Y;
     real_t *d_rhs, *d_residual;
 
-    CUDA_CHECK(cudaMalloc(&d_rhs, size*sizeof(real_t)));
-    CUDA_CHECK(cudaMalloc(&d_residual, size*sizeof(real_t)));
+    CUDA_CHECK(tracked_cuda_malloc(&d_rhs, size*sizeof(real_t)));
+    CUDA_CHECK(tracked_cuda_malloc(&d_residual, size*sizeof(real_t)));
 
     // --------------------------
     // 1. Monte Carlo estimate
@@ -301,29 +302,31 @@ void solve_poisson_periodic(FieldContainer& fc) {
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
 
-    // --------------------------
-    // 2. Variance-Reduced estimate
-    // --------------------------
-    compute_rhs_kernel<<<gridDim, blockDim>>>(fc.d_NVR, d_rhs, N_GRID_X, N_GRID_Y, dx, dy, QP, N_PARTICLES, Lx, Ly);
-    CUDA_CHECK(cudaGetLastError());
-    CUDA_CHECK(cudaDeviceSynchronize());
+    if (fc.vr_enabled) {
+        // --------------------------
+        // 2. Variance-Reduced estimate
+        // --------------------------
+        compute_rhs_kernel<<<gridDim, blockDim>>>(fc.d_NVR, d_rhs, N_GRID_X, N_GRID_Y, dx, dy, QP, N_PARTICLES, Lx, Ly);
+        CUDA_CHECK(cudaGetLastError());
+        CUDA_CHECK(cudaDeviceSynchronize());
 
-    res_normalizer = compute_l2_norm(d_rhs, size);
+        res_normalizer = compute_l2_norm(d_rhs, size);
 
-    poisson_fft_solver(N_GRID_X, N_GRID_Y, fc.dx, fc.dy, d_rhs, fc.d_phiVR);
+        poisson_fft_solver(N_GRID_X, N_GRID_Y, fc.dx, fc.dy, d_rhs, fc.d_phiVR);
 
-    compute_residual_kernel<<<gridDim, blockDim>>>(fc.d_phiVR, d_rhs, d_residual, N_GRID_X, N_GRID_Y, dx, dy);
-    CUDA_CHECK(cudaGetLastError());
-    CUDA_CHECK(cudaDeviceSynchronize());
+        compute_residual_kernel<<<gridDim, blockDim>>>(fc.d_phiVR, d_rhs, d_residual, N_GRID_X, N_GRID_Y, dx, dy);
+        CUDA_CHECK(cudaGetLastError());
+        CUDA_CHECK(cudaDeviceSynchronize());
 
-    res_norm = compute_l2_norm(d_residual, size) / res_normalizer;
+        res_norm = compute_l2_norm(d_residual, size) / res_normalizer;
 
-    compute_electric_field_kernel_periodic<<<gridDim, blockDim>>>(fc.d_phiVR, fc.d_ExVR, fc.d_EyVR, N_GRID_X, N_GRID_Y, dx, dy);
-    CUDA_CHECK(cudaGetLastError());
-    CUDA_CHECK(cudaDeviceSynchronize());
+        compute_electric_field_kernel_periodic<<<gridDim, blockDim>>>(fc.d_phiVR, fc.d_ExVR, fc.d_EyVR, N_GRID_X, N_GRID_Y, dx, dy);
+        CUDA_CHECK(cudaGetLastError());
+        CUDA_CHECK(cudaDeviceSynchronize());
+    }
 
     // Cleanup
-    cudaFree(d_residual);
-    cudaFree(d_rhs);
+    tracked_cuda_free(d_residual);
+    tracked_cuda_free(d_rhs);
     cudaDeviceSynchronize();
 }

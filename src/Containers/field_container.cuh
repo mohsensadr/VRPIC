@@ -3,6 +3,7 @@
 #include <cuda_runtime.h>
 #include <stdexcept>
 #include "Constants/constants.hpp"
+#include "Diagnostics/gpu_memory_tracker.hpp"
 
 #define TILE_X 16
 #define TILE_Y 16
@@ -33,8 +34,13 @@ public:
     float_type xmin, ymin;
     int nx, ny;
     size_t grid_size;
+    bool vr_enabled;
+    bool mxe_enabled;
 
-    FieldContainer(int N_GRID_X, int N_GRID_Y, float_type Lx, float_type Ly) : nx(N_GRID_X), ny(N_GRID_Y) {
+    FieldContainer(int N_GRID_X, int N_GRID_Y, float_type Lx, float_type Ly,
+                   bool enable_vr, bool enable_mxe)
+        : nx(N_GRID_X), ny(N_GRID_Y), vr_enabled(enable_vr),
+          mxe_enabled(enable_mxe) {
         grid_size = nx * ny;
         xmin = 0.0;
         ymin = 0.0;
@@ -42,47 +48,51 @@ public:
         dy = Ly / ny;
         size_t bytes = grid_size * sizeof(float_type);
 
-        cudaMalloc(&d_N, bytes);
-        cudaMalloc(&d_Ux, bytes);
-        cudaMalloc(&d_Uy, bytes);
-        cudaMalloc(&d_T, bytes);
-        cudaMalloc(&d_phi, bytes);
-        cudaMalloc(&d_Ex, bytes);
-        cudaMalloc(&d_Ey, bytes);
+        tracked_cuda_malloc(&d_N, bytes);
+        tracked_cuda_malloc(&d_Ux, bytes);
+        tracked_cuda_malloc(&d_Uy, bytes);
+        tracked_cuda_malloc(&d_T, bytes);
+        tracked_cuda_malloc(&d_phi, bytes);
+        tracked_cuda_malloc(&d_Ex, bytes);
+        tracked_cuda_malloc(&d_Ey, bytes);
 
-        cudaMalloc(&d_NVR, bytes);
-        cudaMalloc(&d_UxVR, bytes);
-        cudaMalloc(&d_UyVR, bytes);
-        cudaMalloc(&d_TVR, bytes);
-        cudaMalloc(&d_phiVR, bytes);
-        cudaMalloc(&d_ExVR, bytes);
-        cudaMalloc(&d_EyVR, bytes);
+        if (vr_enabled) {
+            tracked_cuda_malloc(&d_NVR, bytes);
+            tracked_cuda_malloc(&d_UxVR, bytes);
+            tracked_cuda_malloc(&d_UyVR, bytes);
+            tracked_cuda_malloc(&d_TVR, bytes);
+            tracked_cuda_malloc(&d_phiVR, bytes);
+            tracked_cuda_malloc(&d_ExVR, bytes);
+            tracked_cuda_malloc(&d_EyVR, bytes);
+        }
 
-        cudaMalloc(&d_pt0, bytes);
-        cudaMalloc(&d_pt1, bytes);
-        cudaMalloc(&d_pt2, bytes);
+        if (mxe_enabled) {
+            tracked_cuda_malloc(&d_pt0, bytes);
+            tracked_cuda_malloc(&d_pt1, bytes);
+            tracked_cuda_malloc(&d_pt2, bytes);
+        }
     }
 
     ~FieldContainer() {
-        cudaFree(d_N);
-        cudaFree(d_Ux);
-        cudaFree(d_Uy);
-        cudaFree(d_T);
-        cudaFree(d_phi);
-        cudaFree(d_Ex);
-        cudaFree(d_Ey);
+        tracked_cuda_free(d_N);
+        tracked_cuda_free(d_Ux);
+        tracked_cuda_free(d_Uy);
+        tracked_cuda_free(d_T);
+        tracked_cuda_free(d_phi);
+        tracked_cuda_free(d_Ex);
+        tracked_cuda_free(d_Ey);
 
-        cudaFree(d_NVR);
-        cudaFree(d_UxVR);
-        cudaFree(d_UyVR);
-        cudaFree(d_TVR);
-        cudaFree(d_phiVR);
-        cudaFree(d_ExVR);
-        cudaFree(d_EyVR);
+        tracked_cuda_free(d_NVR);
+        tracked_cuda_free(d_UxVR);
+        tracked_cuda_free(d_UyVR);
+        tracked_cuda_free(d_TVR);
+        tracked_cuda_free(d_phiVR);
+        tracked_cuda_free(d_ExVR);
+        tracked_cuda_free(d_EyVR);
 
-        cudaFree(d_pt0);
-        cudaFree(d_pt1);
-        cudaFree(d_pt2);
+        tracked_cuda_free(d_pt0);
+        tracked_cuda_free(d_pt1);
+        tracked_cuda_free(d_pt2);
     }
 
     // Optional: zero out all field arrays
@@ -93,13 +103,17 @@ public:
         cudaMemset(d_Uy, 0, bytes);
         cudaMemset(d_T, 0, bytes);
 
-        cudaMemset(d_NVR, 0, bytes);
-        cudaMemset(d_UxVR, 0, bytes);
-        cudaMemset(d_UyVR, 0, bytes);
-        cudaMemset(d_TVR, 0, bytes);
-      
-        cudaMemset(d_pt0, 0, bytes);
-        cudaMemset(d_pt1, 0, bytes);
-        cudaMemset(d_pt2, 0, bytes);
+        if (vr_enabled) {
+            cudaMemset(d_NVR, 0, bytes);
+            cudaMemset(d_UxVR, 0, bytes);
+            cudaMemset(d_UyVR, 0, bytes);
+            cudaMemset(d_TVR, 0, bytes);
+        }
+
+        if (mxe_enabled) {
+            cudaMemset(d_pt0, 0, bytes);
+            cudaMemset(d_pt1, 0, bytes);
+            cudaMemset(d_pt2, 0, bytes);
+        }
     }
 };
